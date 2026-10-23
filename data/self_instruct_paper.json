@@ -1,0 +1,148 @@
+[
+  {
+    "page": 1,
+    "section": "Title & Abstract",
+    "title": "SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions",
+    "authors": "Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah A. Smith, Daniel Khashabi, Hannaneh Hajishirzi",
+    "affiliations": "University of Washington, Tehran Polytechnic, Arizona State University, Johns Hopkins University, Allen Institute for AI",
+    "content": "SELF-INSTRUCT: Aligning Language Models with Self-Generated Instructions (ACL 2023).\nAbstract: Large 'instruction-tuned' language models (i.e., finetuned to respond to instructions) have demonstrated a remarkable ability to generalize zero-shot to new tasks. Nevertheless, they depend heavily on human-written instruction data that is often limited in quantity, diversity, and creativity, therefore hindering the generality of the tuned model. We introduce SELF-INSTRUCT, a framework for improving the instruction-following capabilities of pretrained language models by bootstrapping off their own generations. Our pipeline generates instructions, input, and output samples from a language model, then filters invalid or similar ones before using them to finetune the original model. Applying our method to the vanilla GPT3, we demonstrate a 33% absolute improvement over the original model on SUPER-NATURALINSTRUCTIONS, on par with the performance of InstructGPT001, which was trained with private user data and human annotations. For further evaluation, we curate a set of expert-written instructions for novel tasks, and show through human evaluation that tuning GPT3 with SELF-INSTRUCT outperforms using existing public instruction datasets by a large margin, leaving only a 5% absolute gap behind InstructGPT001. SELF-INSTRUCT provides an almost annotation-free method for aligning pretrained language models with instructions, and we release our large synthetic dataset to facilitate future studies on instruction tuning."
+  },
+  {
+    "page": 1,
+    "section": "Section 1: Introduction & Figure 1",
+    "title": "Introduction to Instruction Tuning & Human Data Bottlenecks",
+    "content": "Section 1: Introduction.\nThe recent NLP literature has witnessed a tremendous amount of activity in building models that can follow natural language instructions. These developments are powered by two key components: large pretrained language models (LM) and human-written instruction data (e.g., PROMPTSOURCE and SUPER-NATURALINSTRUCTIONS / SUPERNI). However, collecting such instruction data is costly and often suffers limited diversity given that most human generations tend to be popular NLP tasks, falling short of covering a true variety of tasks and different ways to describe them.\nFigure 1 presents selected tasks from the generated instruction data using vanilla GPT3: \n1) Instruction: 'Write a letter from the perspective of a cat.' Input: Null. Output: 'Dear [Owner], I am writing to you today because I have a problem...'\n2) Instruction: 'I am looking for a job and I need to fill out an application form. Can you please help me complete it?' Input: Application Form with fields. Output: Completed form with Name, Age, Sex, etc.\n3) Instruction: 'How to write a code for converting degrees fahrenheit to celsius.' Input: Null. Output: Python function `def convert_fahrenheit_to_celsius(fahr): return (fahr - 32) * 5 / 9`.\n4) Instruction: 'Given an address and city, come up with the zip code.' Input: Address: 123 Main Street, City: San Francisco. Output: 94105."
+  },
+  {
+    "page": 2,
+    "section": "Overview & Contributions",
+    "title": "SELF-INSTRUCT High-Level Pipeline & Key Contributions",
+    "content": "Figure 2 & Overview: High-level overview of SELF-INSTRUCT. The process starts with a small seed set of tasks (175 seed tasks with 1 instruction and 1 instance per task) as the task pool. Random tasks are sampled from the task pool and used to prompt an off-the-shelf LM to generate both new instructions and corresponding instances, followed by filtering low-quality or similar generations, and then adding them back to the repository of tasks. The resulting data can be used for instruction tuning of the LM itself to follow instructions better.\nApplying this iterative process to GPT3 produces about 52K instructions, paired with about 82K instance inputs and target outputs.\nFinetuning GPT3 on this data yields GPT3_SELF-INST, which outperforms vanilla GPT3 by +33.1% on SUPERNI and nearly matches InstructGPT001.\nSummary of contributions:\n1) Introduce SELF-INSTRUCT, a method for inducing instruction-following capabilities with minimal human-labeled data.\n2) Demonstrate effectiveness via extensive instruction-tuning experiments.\n3) Release a large synthetic dataset of 52K instructions and manually-written novel tasks for building and evaluating future models."
+  },
+  {
+    "page": 3,
+    "section": "Section 2: Method - Instruction Data & Step 1-3",
+    "title": "Section 2: Method - 4 Steps of Automatic Instruction Data Generation",
+    "content": "Section 2: Method.\n2.1 Defining Instruction Data: The instruction data contains a set of instructions {I_t}, each defining a task t in natural language. Task t has n_t >= 1 input-output instances {(X_{t,i}, Y_{t,i})}. A model M is expected to produce the output given the instruction and input: M(I_t, X_{t,i}) = Y_{t,i}. In many tasks, additional input X is empty (e.g. 'write an essay about school safety').\n2.2 Automatic Instruction Data Generation consists of 4 steps:\nStep 1: Instruction Generation: Bootstrapping new instructions from 175 seed tasks (1 instruction, 1 instance each). In every step, 8 task instructions are sampled as in-context examples: 6 from human-written tasks, and 2 from model-generated tasks to promote diversity.\nStep 2: Classification Task Identification: Identifying whether an instruction represents a classification task (having a small, limited output label space). Prompted in a few-shot manner using 12 classification and 19 non-classification seed instructions.\nStep 3: Instance Generation:\n- Input-first Approach (for non-classification tasks): The model is asked to generate input fields first based on the instruction, and then generate the corresponding output.\n- Output-first Approach (for classification tasks): To prevent bias toward one label (e.g. generating only grammatical sentences for grammar error detection), the model first generates possible class labels, and then conditions input generation on each class label.\nStep 4: Filtering and Postprocessing: Pruning instructions with ROUGE-L similarity >= 0.7 against existing tasks, excluding non-text keywords (image, graph), and eliminating redundant or malformed instance generations."
+  },
+  {
+    "page": 3,
+    "section": "Section 2.2: Method - Step 4 Filtering",
+    "title": "Section 2.2: Method - Step 4 Filtering and Postprocessing Pipeline",
+    "content": "Step 4: Filtering and Postprocessing in the Automatic Instruction Generation Pipeline:\nStep 4: Filtering and Postprocessing in SELF-INSTRUCT:\nTo encourage diversity and maintain quality, a newly generated instruction is added to the task pool only when its ROUGE-L similarity with any existing instruction in the pool is less than 0.7.\nSpecific filtering heuristics:\n1) Keyword exclusion: Instructions containing specific keywords that usually cannot be processed by text LMs (such as 'image', 'picture', 'graph') are excluded.\n2) Instance filtering: Instances that are exactly identical or have identical inputs but different outputs are filtered out.\n3) Heuristic rules: Invalid generations are eliminated if the instruction is too long or too short, or if the instance output is simply a verbatim repetition of the input."
+  },
+  {
+    "page": 4,
+    "section": "Section 2.3 & 3: Finetuning & Dataset Statistics",
+    "title": "Finetuning Details and Generated Dataset Statistics",
+    "content": "Section 2.3: Finetuning the LM to Follow Instructions:\nThe instruction and instance input are concatenated as a prompt, and the model is trained to generate the output in a standard supervised manner. Multiple prompt templates are used (e.g., prefixing with 'Task:', 'Input:', 'Output:', or varying newlines) to make the model robust to varying prompt formats.\nSection 3: SELF-INSTRUCT Data from GPT3 (davinci engine via OpenAI API):\nTable 1: Dataset Statistics:\n- Total number of instructions generated: 52,445\n- Number of classification instructions: 11,584\n- Number of non-classification instructions: 40,861\n- Total number of instances: 82,439\n- Number of instances with empty input: 35,878\n- Average instruction length: 15.9 words\n- Average non-empty input length: 12.7 words\n- Average output length: 18.9 words."
+  },
+  {
+    "page": 4,
+    "section": "Section 3.2 & 3.3: Diversity and Quality Review",
+    "title": "Instruction Diversity Analysis and Quality Human Evaluation",
+    "content": "Section 3.2: Diversity Analysis:\nUsing the Berkeley Neural Parser, the root verb and direct noun object were extracted. 26,559 out of 52,445 instructions contain this verb-noun structure. Top verbs include write, give, find, create, make, describe, design, generate, classify. The ROUGE-L overlap distribution between generated instructions and 175 seed instructions peaks between 0.2 and 0.4, indicating high novelty and minimal overlap with seed instructions.\nSection 3.3: Quality Analysis:\nAn expert author evaluated 200 randomly sampled instructions (1 instance each):\n- Does the instruction describe a valid task? 92% Yes\n- Is the input appropriate for the instruction? 79% Yes\n- Is the output a correct and acceptable response? 58% Yes\n- All fields valid: 54% Yes.\nEven though outputs may contain errors, most are in the correct format or partially correct, providing strong supervision for instruction tuning."
+  },
+  {
+    "page": 5,
+    "section": "Section 4.1 & 4.2: Experimental Setup & Baselines",
+    "title": "Finetuning Hyperparameters and Baseline Models",
+    "content": "Section 4.1: GPT3_SELF-INST Finetuning:\nFinetuned from GPT3 ('davinci' engine, 175B parameters) using OpenAI fine-tuning API. Prompt loss weight was set to 0. Trained for 2 epochs to avoid overfitting.\nSection 4.2: Baselines:\n1) Off-the-shelf LMs: T5-LM (11B) and GPT3 (175B davinci) vanilla pre-trained without instruction tuning.\n2) Publicly available instruction-tuned models: T0 (11B) and Tk-INSTRUCT (11B).\n3) GPT3 finetuned on public data: GPT3 + T0 Training (50K instances), GPT3 + SUPERNI Training (50K instances).\n4) OpenAI InstructGPT models: InstructGPT001 (text-davinci-001), InstructGPT002 (text-davinci-002), and InstructGPT003 (text-davinci-003)."
+  },
+  {
+    "page": 6,
+    "section": "Section 4.3: Experiment 1 - SUPERNI Benchmark Results",
+    "title": "SUPERNI Benchmark Zero-Shot Generalization Results",
+    "content": "Section 4.3: SUPERNI Zero-Shot Generalization (119 evaluation tasks, 100 instances each, evaluated with ROUGE-L):\nTable 3 Results:\n- Vanilla T5-LM (11B): 25.7 ROUGE-L\n- Vanilla GPT3 (175B): 6.8 ROUGE-L\n- T0 (11B): 33.1 ROUGE-L\n- GPT3 + T0 Training (175B): 37.9 ROUGE-L\n- GPT3_SELF-INST (Ours, 175B): 39.9 ROUGE-L (+33.1 absolute improvement over vanilla GPT3)\n- InstructGPT001 (175B): 40.8 ROUGE-L\n- Tk-INSTRUCT (11B): 46.0 ROUGE-L\n- GPT3 + SUPERNI Training (175B): 49.5 ROUGE-L\n- GPT3_SELF-INST + SUPERNI Training (Ours, 175B): 51.6 ROUGE-L\nKey Findings:\n1) SELF-INSTRUCT boosts GPT3 zero-shot instruction following by 33.1%.\n2) GPT3_SELF-INST nearly matches InstructGPT001 (trained with private human data).\n3) Combining SELF-INSTRUCT with SUPERNI further improves performance to 51.6, proving complementary value."
+  },
+  {
+    "page": 6,
+    "section": "Section 4.4: Experiment 2 - User-Oriented Instructions",
+    "title": "Evaluation on 252 User-Oriented Novel Instructions",
+    "content": "Section 4.4: Generalization to User-oriented Instructions on Novel Tasks:\nBecause standard NLP tasks in SUPERNI are skewed toward classification, the authors curated 252 novel user-oriented instructions with 1 instance each covering real-world domains: email writing, social media, productivity tools, entertainment, programming.\nInstructions vary in format (bullet points, tables, code, equations). Average ROUGE-L similarity between seeds and user-oriented instructions is only 0.34, showing novel task coverage."
+  },
+  {
+    "page": 7,
+    "section": "Section 4.4 & Figure 6: Human Evaluation Rating System",
+    "title": "4-Level Human Evaluation System and Comparison to InstructGPT",
+    "content": "Human Evaluation Rating Criteria for 252 User-oriented Instructions:\n- RATING-A: The response is valid and satisfying.\n- RATING-B: The response is acceptable but has minor errors or imperfections.\n- RATING-C: The response is relevant and responds to the instruction, but has significant errors in content.\n- RATING-D: The response is irrelevant or completely invalid.\nFigure 6 Human Evaluation Results:\n- Vanilla GPT3: largely fails (mostly Rating D).\n- GPT3 + T0 Training: 44 Rating A, 31 Rating B, 59 Rating C, 118 Rating D.\n- GPT3 + SuperNI Training: 74 Rating A, 30 Rating B, 80 Rating C, 68 Rating D.\n- GPT3_SELF-INST: 112 Rating A, 49 Rating B (total 161 acceptable = 63.9%), 66 Rating C, 25 Rating D.\n- InstructGPT001: 128 Rating A, 45 Rating B (total 173 acceptable = 68.7%), 61 Rating C, 18 Rating D.\n- InstructGPT002: 168 Rating A, 40 Rating B.\n- InstructGPT003: 192 Rating A, 30 Rating B.\nKey Finding: Counting acceptable responses (Rating A + B), GPT3_SELF-INST is only 5% behind InstructGPT001 (which used private user queries and human annotation)."
+  },
+  {
+    "page": 8,
+    "section": "Section 4.5: Data Size Scaling & Distillation Quality",
+    "title": "Scaling Curves and Distillation with InstructGPT003",
+    "content": "Section 4.5: Effect of Data Size and Quality:\nData Size Scaling (Figure 7):\nHuman evaluation percentage of responses rated as Rating-A as data size grows:\n- 175 seed tasks: 31.0%\n- 800 instructions: 36.9%\n- 6,400 instructions: 43.7%\n- 52,445 instructions: 44.4%\nPerformance increases steadily up to ~16K instructions, after which gains plateau.\nData Quality & Distillation:\nRegenerating instance outputs using InstructGPT003 (knowledge distillation) and finetuning GPT3 on the cleaned data boosted Rating-A performance by 10% (from 44.4% to 54.4%). This confirms that data quality can significantly improve instruction-tuning."
+  },
+  {
+    "page": 8,
+    "section": "Section 5: Related Work",
+    "title": "Related Work in Instruction Following, Self-Training, and Distillation",
+    "content": "Section 5: Related Work:\n1) Instruction-following LMs: Models like PromptSource, Super-NaturalInstructions, T0, Tk-Instruct, FLAN, and InstructGPT show scaling data diversity improves generalization.\n2) Language models for data generation: Prior works generated data for specific single tasks (QA, NLI). SELF-INSTRUCT is task-agnostic and generates new task definitions from scratch.\n3) Unnatural Instructions (Honovich et al., 2022a): Parallel work generating instruction data, but uses SuperNI as seeds and distills InstructGPT002, whereas SELF-INSTRUCT uses vanilla GPT3 and hand-crafted seed tasks.\n4) Model self-training & Bootstrapping: Literature on pseudo-labeling, STAR (bootstrapping reasoning), and Self-Correction."
+  },
+  {
+    "page": 9,
+    "section": "Section 6: Conclusion",
+    "title": "Summary of Findings and Future Outlook",
+    "content": "Section 6: Conclusion:\nSELF-INSTRUCT is introduced as a method to improve instruction-following ability of LMs via self-generated instruction data. Bootstrapping off vanilla GPT3 generates 52K instructions, leading to 33% absolute improvement on SUPERNI over original GPT3 and performing within 5% of InstructGPT001 on human evaluation of novel user instructions. The paper demonstrates that base pretrained language models possess latent instruction-following abilities that can be unlocked almost without human annotation."
+  },
+  {
+    "page": 10,
+    "section": "Section 7 & 8: Broader Impact & Limitations",
+    "title": "Broader Impact, Transparency, and Research Limitations",
+    "content": "Section 7: Broader Impact:\nBrings transparency behind the scenes of closed industrial models like InstructGPT and ChatGPT. The released synthetic dataset enables open-source research and inspired subsequent efforts like Stanford Alpaca (Taori et al., 2023) and Baize.\nSection 8: Limitations:\n1) Tail phenomena: LMs struggle with low-frequency/long-tail concepts; gains are skewed toward frequent pretraining language uses, leading to brittleness on uncommon/creative tasks.\n2) Dependence on large models: Inductive biases require sufficiently large models (e.g. 175B parameters) to work well.\n3) Reinforcing LM biases: Iterative self-generation can amplify stereotypes, slurs, and social biases, or suffer from label imbalance reflecting prior LM biases."
+  },
+  {
+    "page": 14,
+    "section": "Appendix A: Implementation Details & API Costs",
+    "title": "Seed Tasks Curation and API Generation Costs",
+    "content": "Appendix A.1: Writing Seed Tasks:\n175 seed tasks (1 instruction and 1 instance per task) written by authors/labmates at UWNLP. Categorized into 25 classification tasks and 150 non-classification tasks. Average ROUGE-L similarity with SUPERNI is 0.21, and with user-oriented instructions is 0.34.\nAppendix A.2: GPT3 API Costs:\nGeneration of the 52K instructions and 82K instances cost around $600 using OpenAI 'davinci' engine completion API ($0.02 per 1,000 tokens as of Dec 2022).\nAppendix A.3: Finetuning Details & Cost:\nFinetuning GPT3 (davinci 175B) for 2 epochs with prompt loss weight 0 cost $338 via the OpenAI fine-tuning API."
+  },
+  {
+    "page": 15,
+    "section": "Appendix A.4: Prompting Templates & Table 4",
+    "title": "Hyperparameters and Instruction Generation Prompt Template",
+    "content": "Table 4: Hyperparameters for OpenAI API:\n- Generating instructions: Temp 0.7, Top_P 0.5, Frequency Penalty 0, Presence Penalty 2, Beam Size 1, Max Length 1024, Stop: '\\n\\n', '\\n16', '16.', '16 .'\n- Identifying classification tasks: Temp 0, Top_P 0, Presence Penalty 0, Max Length 3, Stop: '\\n', 'Task:'\n- Generating instances: Temp 0, Top_P 0, Presence Penalty 1.5, Max Length 300, Stop: 'Task:'\n- Evaluating models: Temp 0, Top_P 0, Max Length 1024.\nTable 5: Instruction generation prompt format:\n'Come up with a series of tasks:\nTask 1: {instruction for existing task 1}\n...\nTask 8: {instruction for existing task 8}\nTask 9:'\nRandomly samples 8 existing instructions (6 human, 2 model-generated)."
+  },
+  {
+    "page": 16,
+    "section": "Appendix Table 6: Classification Prompt",
+    "title": "Few-Shot Prompt for Identifying Classification Tasks",
+    "content": "Table 6: Classification Identification Prompt:\n'Can the following task be regarded as a classification task with finite output labels?\nTask: Given my personality and the job, tell me if I would be suitable. -> Is it classification? Yes\nTask: Give me an example of a time when you had to use your sense of humor. -> Is it classification? No\nTask: Replace placeholders in text with appropriate named entities. -> Is it classification? No\nTask: Fact checking - tell me if statement is true, false, or unknown. -> Is it classification? Yes\nTask: Return the SSN number for the person. -> Is it classification? No\nTask: Detect if Reddit thread contains hate speech. -> Is it classification? Yes\nTask: Select oldest person from the list. -> Is it classification? Yes\nTask: Does document support claim? You can answer Support or Unsupport. -> Is it classification? Yes\nTask: {instruction for target task}'"
+  },
+  {
+    "page": 17,
+    "section": "Appendix Table 7: Input-First Generation Prompt",
+    "title": "Input-First Instance Generation Prompt for Non-Classification Tasks",
+    "content": "Table 7: Prompt for input-first instance generation:\n'Come up with examples for the following tasks. Try to generate multiple examples when possible. If the task doesn't require additional input, you can generate the output directly.'\nIn-context demonstration examples include:\n- 'Which exercises are best for reducing belly fat at home?' (Direct output: Lying Leg Raises, Plank, etc.)\n- 'Extract all the country names in the paragraph, list them separated by commas.' (Input: Dr. No excerpt, Output: English, British, Jamaica, etc.)\n- 'Converting 85 F to Celsius.' (Output: 85°F = 29.44°C)\n- 'Sort the given list ascendingly.' (Input list, Output sorted list)\n- 'Suggest a better and more professional rephrasing of the following sentence.'\n- 'Turn down a job offer by sending an email to a recruiter explaining the reason.'"
+  },
+  {
+    "page": 18,
+    "section": "Appendix Table 8: Output-First Generation Prompt",
+    "title": "Output-First Instance Generation Prompt for Classification Tasks",
+    "content": "Table 8: Prompt for output-first instance generation for classification:\n'Given the classification task definition and the class labels, generate an input that corresponds to each of the class labels. If the task doesn't require input, just generate the correct class label.'\nDemonstration examples:\n- Sentiment: positive, negative, mixed (conditions input sentence on the class label)\n- Customer service satisfaction: Satisfied vs Unsatisfied dialogue\n- Political opinion: Democrat vs Republican\n- Email promotion classification: Promotion vs Not Promotion\n- Hate speech detection: Hate Speech vs Not Hate Speech\n- Document claim support: Support vs Unsupport."
+  },
+  {
+    "page": 19,
+    "section": "Appendix B: Human Evaluation Agreement Metrics",
+    "title": "Inter-Rater Reliability Metrics for Human Evaluation",
+    "content": "Appendix B.2: Human Evaluation Agreement:\nTwo author evaluators rated all 252 user-oriented instructions independently in an anonymized Google sheet.\nAgreement statistics:\n- Cohen's kappa for 4-class categorical scale (A, B, C, D): kappa = 0.58 (moderate agreement).\n- Cohen's kappa for binary classification of acceptable responses ((A or B) vs (C or D)): kappa = 0.75 (substantial agreement).\n- Spearman rank correlation coefficient rho treating ratings as ordinal (A > B > C > D): rho = 0.81 (high correlation)."
+  },
+  {
+    "page": 21,
+    "section": "Appendix Table 9: Example Predictions & Ratings",
+    "title": "Representative Predictions from GPT3_SELF-INST with Expert Ratings",
+    "content": "Table 9: Examples of user-oriented tasks and GPT3_SELF-INST outputs:\n- Rating A: 'Give students tips on how to keep their nerves under control during class presentations' -> High quality tips on practicing, breathing, avoiding excess caffeine.\n- Rating A: 'Make a list of pros and cons of implementing a remote working policy' -> Clear pros (save commute, family time) and cons (less motivation/productivity).\n- Rating A: 'Write a user story for Gmail' -> 'As a user, I want to be able to send emails to my friends and family...'\n- Rating B: 'Find CSS code for light red with medium light shade of pink' -> Output #ff66cc (acceptable approximation vs target #DB7093).\n- Rating B: 'Road trip from San Diego to Los Angeles' -> Recommended San Diego Zoo and Hollywood signs.\n- Rating C: 'Translate first-order logic into natural language' -> Had minor semantic translation flaws.\n- Rating D: 'Write a Jira ticket for New Employee onboarding' -> Model instead generated a question asking for help with onboarding."
+  },
+  {
+    "page": 22,
+    "section": "Appendix Table 10: Valid Generated Tasks",
+    "title": "Examples of High-Quality Valid Generated Tasks",
+    "content": "Table 10: Representative valid tasks generated by GPT3:\n- Generate random password with at least 6 characters (Python code with random.randint)\n- How to tie shoelaces for beginners (Step-by-step paragraph)\n- Word length and number of vowels for 'hello' (Length = 5, Number of vowels = 2)\n- Story with three characters: John the programmer, a dog, and a laptop\n- Compose an email asking a friend for advice on late work hours\n- Ways to make our school more eco-friendly\n- Advice on finding an affordable apartment\n- Dialogue between friends trying to convince each other to go to the beach\n- Describe favorite video game using only verbs ('Explore, fight, solve, upgrade, repeat')."
+  },
+  {
+    "page": 23,
+    "section": "Appendix Table 11: Invalid Generated Tasks",
+    "title": "Examples of Problematic or Invalid Generated Tasks",
+    "content": "Table 11: Representative invalid tasks generated by GPT3:\n- Word subset sum mathematical formula (malformed instruction and incomplete python implementation)\n- 'The house on fire! go!' (incorrect output instructing to get a pan and tap water to put out house fire)\n- Interview candidate with highest salary (malformed inputs with numerical lists)\n- What is your salary? (model generated Python class Solution with getSalary returning self.salary)\n- Bitcoin private key transfer without identity (inaccurate description of how Bitcoin transactions work).\nThese errors illustrate why filtering and heuristic verification are essential."
+  }
+]
