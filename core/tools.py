@@ -32,14 +32,13 @@ class TavilySearchTool:
     Uses Tavily Search API (https://api.tavily.com/search) to retrieve real-time news and web intelligence.
     """
     API_URL = "https://api.tavily.com/search"
-    DEFAULT_API_KEY = "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"
 
     @classmethod
     def search(cls, query: str, api_key: Optional[str] = None, max_results: int = 5) -> Dict[str, Any]:
         key = api_key or os.getenv("TAVILY_API_KEY")
         if not key:
             load_env_file()
-            key = os.getenv("TAVILY_API_KEY") or cls.DEFAULT_API_KEY
+            key = os.getenv("TAVILY_API_KEY")
 
         clean_query = query.strip()
         # Clean common news / search prefixes

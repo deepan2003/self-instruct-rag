@@ -213,92 +213,31 @@ if prompt := st.chat_input("Ask a research question, weather in Tamil Nadu, run 
                 status_box.write("✅ Guardrails passed: Input is clean, safe, and authorized")
                 time.sleep(0.25)
 
-                # Check if a tool is identified
-                tool_type = ToolRouter.identify_tool(prompt)
-
-                if tool_type == "weather":
-                    status_box.write(f"🌦️ Invoking Tamil Nadu Live Weather API for query: '{prompt}'...")
-                    time.sleep(0.3)
+                intent = ConversationHandler.classify_intent(prompt)
+                if intent == "memory":
+                    status_box.write(f"🧠 Accessing isolated memory for thread '{active_thread}'...")
+                    time.sleep(0.2)
                     response: StructuredRAGResponse = pipeline.query(
                         prompt,
                         top_k=top_k,
                         threshold=threshold,
                         chat_history=current_thread_messages
                     )
-                    status_box.write("✅ Tamil Nadu weather telemetry retrieved")
-                    time.sleep(0.25)
-
-                elif tool_type == "code_execution":
-                    status_box.write("💻 Executing Python code in sandboxed interpreter...")
-                    time.sleep(0.3)
-                    response: StructuredRAGResponse = pipeline.query(
-                        prompt,
-                        top_k=top_k,
-                        threshold=threshold,
-                        chat_history=current_thread_messages
-                    )
-                    status_box.write("✅ Code executed & stdout captured successfully")
-                    time.sleep(0.25)
-
-                elif tool_type == "tavily_search":
-                    status_box.write("🌐 Querying Tavily Live Web & News Search API...")
-                    time.sleep(0.3)
-                    response: StructuredRAGResponse = pipeline.query(
-                        prompt,
-                        top_k=top_k,
-                        threshold=threshold,
-                        chat_history=current_thread_messages
-                    )
-                    status_box.write("✅ Live news & web results retrieved")
-                    time.sleep(0.25)
-
+                    status_box.write("✅ Thread memory retrieved successfully")
+                    time.sleep(0.2)
                 else:
-                    intent = ConversationHandler.classify_intent(prompt)
-                    if intent == "memory":
-                        status_box.write(f"🧠 Accessing isolated memory for thread '{active_thread}'...")
-                        time.sleep(0.25)
-                        response: StructuredRAGResponse = pipeline.query(
-                            prompt,
-                            top_k=top_k,
-                            threshold=threshold,
-                            chat_history=current_thread_messages
-                        )
-                        status_box.write("✅ Thread memory retrieved successfully")
-                        time.sleep(0.3)
-                    elif intent:
-                        status_box.write("📦 Executing Pydantic structure for conversational response...")
-                        time.sleep(0.25)
-                        response: StructuredRAGResponse = pipeline.query(
-                            prompt,
-                            top_k=top_k,
-                            threshold=threshold,
-                            chat_history=current_thread_messages
-                        )
-                        status_box.write("✅ Executed Pydantic structure successfully")
-                        time.sleep(0.3)
-                    else:
-                        # RAG path: Retrieve citations and execute Pydantic structure
-                        status_box.write("🔍 Retrieving context and citations from SELF-INSTRUCT paper...")
-                        time.sleep(0.25)
-                        response: StructuredRAGResponse = pipeline.query(
-                            prompt,
-                            top_k=top_k,
-                            threshold=threshold,
-                            chat_history=current_thread_messages
-                        )
-
-                        cit_count = len(response.sources) if response.sources else 0
-                        if cit_count > 0:
-                            status_box.write(f"📚 Retrieved & verified {cit_count} source citations from paper")
-                        else:
-                            status_box.write("ℹ️ Handled as conversational out-of-scope guidance")
-                        time.sleep(0.25)
-
-                        status_box.write("📦 Executing Pydantic structure (`answer` + `citations`)...")
-                        rag_answer = response.to_rag_answer()
-                        time.sleep(0.25)
-                        status_box.write("✅ Executed Pydantic structure (Anti-hallucination verified)")
-                        time.sleep(0.3)
+                    status_box.write("🧠 Main Agent (openai/gpt-oss-120b) reasoning & routing request...")
+                    time.sleep(0.25)
+                    response: StructuredRAGResponse = pipeline.query(
+                        prompt,
+                        top_k=top_k,
+                        threshold=threshold,
+                        chat_history=current_thread_messages
+                    )
+                    status_box.write(f"⚡ ReAct Execution: {response.summary}")
+                    time.sleep(0.25)
+                    status_box.write("✅ Grounded response synthesized by Main Agent")
+                    time.sleep(0.2)
 
         # Disappear the checking box completely before printing the output
         status_placeholder.empty()

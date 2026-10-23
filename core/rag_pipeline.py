@@ -11,24 +11,27 @@ from core.guardrails import InputGuardrails
 from core.hallucination import HallucinationPreventer
 from core.conversation import ConversationHandler
 from core.tools import ToolRouter, TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool
+from core.agent import ReActAgent
 from core.models import StructuredRAGResponse, GuardrailReport, GroundingEvaluation, ConfidenceLevel, GuardrailStatus
 
 class RAGPipeline:
     """
-    End-to-end Guardrailed, Anti-Hallucinating RAG Pipeline with Tool Support:
+    End-to-end Guardrailed, Anti-Hallucinating RAG Pipeline with Main ReAct Agent:
     1) Input Guardrails (Prompt Injection, Harmful, Exfiltration & Scope Filter)
-    2) Tool Router (Tamil Nadu Live Weather, Python Code Execution, Tavily Live News Search)
-    3) Conversational & Memory Handling
-    4) Semantic Retrieval & Context-Augmented Generation
-    5) Hallucination & Faithfulness Verification
-    6) Strongly-typed Pydantic Output with exact Page Sources
+    2) Main Agent ReAct Loop (openai/gpt-oss-120b on Groq)
+       - Reasons which sub-agent / tool to invoke
+       - Executes: rag_search, tamil_nadu_weather, python_code_runner, tavily_live_news
+       - Synthesizes final grounded response
+    3) Anti-Hallucination & Faithfulness Verification
+    4) Strongly-typed Pydantic Output with exact Page Sources
     """
     def __init__(
         self,
         embedding_engine: Optional[BaseEmbeddingEngine] = None,
         generator: Optional[RAGGenerator] = None,
         chunk_size: int = 1800,
-        chunk_overlap: int = 250
+        chunk_overlap: int = 250,
+        groq_api_key: Optional[str] = None
     ):
         self.chunker = TextChunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.embedding_engine = embedding_engine or TFIDFEmbeddingEngine()
@@ -37,6 +40,7 @@ class RAGPipeline:
         self.generator = generator or RAGGenerator()
         self.guardrails = InputGuardrails()
         self.hallucination_preventer = HallucinationPreventer()
+        self.agent = ReActAgent(api_key=groq_api_key)
         self.is_indexed = False
 
     def ingest_json(self, json_path: str) -> Dict[str, int]:
@@ -65,7 +69,7 @@ class RAGPipeline:
         tavily_api_key: Optional[str] = None
     ) -> StructuredRAGResponse:
         """
-        Executes the full protected RAG pipeline, tool router, and anti-hallucination checks.
+        Executes the full protected RAG pipeline through the Main ReAct Agent.
         """
         start_time = time.time()
 
@@ -92,97 +96,9 @@ class RAGPipeline:
                 status="BLOCKED_GUARDRAILS"
             )
 
-        # Step 1.2: Tool Router (Live Weather, Code Execution, Tavily Live News)
-        detected_tool = ToolRouter.identify_tool(query_text)
-
-        if detected_tool == "weather":
-            weather_data = TamilNaduWeatherTool.get_weather(query_text)
-            answer_md = TamilNaduWeatherTool.format_markdown(weather_data)
-            latency = (time.time() - start_time) * 1000
-            return StructuredRAGResponse(
-                query=query_text,
-                answer=answer_md,
-                summary=f"Live weather report for {weather_data.get('location', 'Tamil Nadu')}.",
-                key_findings=[
-                    f"Location: {weather_data.get('location')}, Tamil Nadu",
-                    f"Temperature: {weather_data.get('temperature_c')}°C ({weather_data.get('temperature_f')}°F)",
-                    f"Condition: {weather_data.get('condition')}",
-                    f"Humidity: {weather_data.get('humidity')}%"
-                ],
-                sources=[],
-                guardrails=guardrail_report,
-                grounding=GroundingEvaluation(
-                    is_grounded=True,
-                    faithfulness_score=1.0,
-                    confidence=ConfidenceLevel.HIGH,
-                    grounded_claims=["Live weather data retrieved from regional weather stations."],
-                    unsupported_claims=[],
-                    verification_notes="Real-time Tamil Nadu meteorological telemetry."
-                ),
-                latency_ms=round(latency, 2),
-                status="TOOL_WEATHER"
-            )
-
-        elif detected_tool == "code_execution":
-            code_to_run = query_text
-            # Clean common command prefixes
-            code_to_run = re.sub(r'^(?:run\s+code:\s*|execute:\s*|python:\s*|run\s+(?:this\s+)?(?:python\s+)?code\s*:?\s*)', '', code_to_run, flags=re.IGNORECASE)
-            exec_res = CodeExecutionTool.execute(code_to_run)
-            answer_md = CodeExecutionTool.format_markdown(exec_res)
-            latency = (time.time() - start_time) * 1000
-            return StructuredRAGResponse(
-                query=query_text,
-                answer=answer_md,
-                summary=f"Python code execution completed (Exit code: {exec_res.get('exit_code')}).",
-                key_findings=[
-                    f"Status: {'Succeeded' if exec_res.get('success') else 'Failed'}",
-                    f"Execution Time: {exec_res.get('execution_time_ms')} ms",
-                    f"Exit code: {exec_res.get('exit_code')}"
-                ],
-                sources=[],
-                guardrails=guardrail_report,
-                grounding=GroundingEvaluation(
-                    is_grounded=True,
-                    faithfulness_score=1.0,
-                    confidence=ConfidenceLevel.HIGH,
-                    grounded_claims=["Local Python subprocess execution completed."],
-                    unsupported_claims=[],
-                    verification_notes="Code executed in local sandboxed Python interpreter."
-                ),
-                latency_ms=round(latency, 2),
-                status="TOOL_CODE"
-            )
-
-        elif detected_tool == "tavily_search":
-            search_res = TavilySearchTool.search(query_text, api_key=tavily_api_key)
-            answer_md = TavilySearchTool.format_markdown(search_res)
-            latency = (time.time() - start_time) * 1000
-            key_findings = [f"Result: {r.get('title')}" for r in search_res.get("results", [])[:3]]
-            if not key_findings:
-                key_findings = ["Live web search executed."]
-
-            return StructuredRAGResponse(
-                query=query_text,
-                answer=answer_md,
-                summary=search_res.get("answer") or "Tavily live search results.",
-                key_findings=key_findings,
-                sources=[],
-                guardrails=guardrail_report,
-                grounding=GroundingEvaluation(
-                    is_grounded=search_res.get("success", False),
-                    faithfulness_score=1.0 if search_res.get("success") else 0.5,
-                    confidence=ConfidenceLevel.HIGH if search_res.get("success") else ConfidenceLevel.MEDIUM,
-                    grounded_claims=["Tavily search API intelligence."],
-                    unsupported_claims=[],
-                    verification_notes="Web intelligence retrieved via Tavily."
-                ),
-                latency_ms=round(latency, 2),
-                status="TOOL_TAVILY"
-            )
-
-        # Step 1.5: Conversational & Memory Intent Handling
+        # Step 1.1: Conversational Memory Intent Handling
         intent = ConversationHandler.classify_intent(query_text)
-        if intent:
+        if intent == "memory":
             latency = (time.time() - start_time) * 1000
             return ConversationHandler.generate_response(
                 query_text,
@@ -191,44 +107,14 @@ class RAGPipeline:
                 chat_history=chat_history
             )
 
-        # Optimize search query if user combined a conversational greeting with a substantive question
-        search_query = query_text
-        substantive = ConversationHandler.extract_substantive_query(query_text)
-        if substantive:
-            search_query = substantive
-
-        # Step 2: Retrieval
-        scored_docs = self.retrieve(search_query, top_k=top_k, threshold=threshold)
-
-        # Step 3: Handle Queries Outside the Paper Conversationally Like a Friend
-        if not scored_docs:
-            latency = (time.time() - start_time) * 1000
-            return ConversationHandler.generate_friendly_chat(
-                query_text,
-                chat_history=chat_history,
-                latency_ms=latency
-            )
-
-        # Step 4: Generation
-        gen_result = self.generator.generate(query_text, scored_docs)
-        sources = gen_result.get("sources", [])
-
-        # Step 5: Hallucination & Faithfulness Verification
-        extracted_claims = self.hallucination_preventer.extract_claims(gen_result["answer"])
-        grounding_eval = self.hallucination_preventer.verify_grounding(extracted_claims, scored_docs)
-
-        latency = (time.time() - start_time) * 1000
-
-        return StructuredRAGResponse(
+        # Step 2: Main ReAct Agent Loop (Thought ➔ Action ➔ Observation ➔ Synthesis)
+        return self.agent.run(
             query=query_text,
-            answer=gen_result["answer"],
-            summary=gen_result.get("summary", ""),
-            key_findings=gen_result.get("key_findings", []),
-            sources=sources,
-            guardrails=guardrail_report,
-            grounding=grounding_eval,
-            latency_ms=round(latency, 2),
-            status="SUCCESS"
+            rag_pipeline=self,
+            chat_history=chat_history,
+            top_k=top_k,
+            threshold=threshold,
+            tavily_api_key=tavily_api_key
         )
 
     def save_index(self, path: str):
