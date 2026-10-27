@@ -47,7 +47,23 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_GET(self):
-        if self.path == "/api/health" or self.path == "/":
+        if self.path == "/":
+            # If opened from a browser (accepts HTML), redirect to frontend on port 3000
+            accept_header = self.headers.get("Accept", "")
+            if "text/html" in accept_header:
+                self.send_response(302)
+                self.send_header("Location", "http://localhost:3000/")
+                self.end_headers()
+                return
+            self._send_json(200, {
+                "status": "ok",
+                "service": "SELF-INSTRUCT RAG Bridge",
+                "stats": stats,
+                "active_threads": memory_mgr.get_all_threads()
+            })
+            return
+
+        if self.path == "/api/health":
             self._send_json(200, {
                 "status": "ok",
                 "service": "SELF-INSTRUCT RAG Bridge",
