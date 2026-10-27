@@ -1,5 +1,5 @@
 /**
- * SELF-INSTRUCT Interactive AI Assistant - Client Application
+ * Baasha Agent - ReAct Multi-Tool Intelligence Assistant
  */
 
 const API_BASE = ''; // Proxied via Express on same origin
@@ -391,6 +391,11 @@ function appendMessage(role, content, responseObj = null) {
       contentBox.appendChild(renderCitationsExpander(responseObj.sources));
       contentBox.appendChild(renderPydanticExpander(responseObj.rag_answer || responseObj));
     }
+
+    // If Gmail Draft: Attach Gmail Draft Card with 1-Click Compose
+    if (responseObj && responseObj.gmail_draft) {
+      contentBox.appendChild(renderGmailDraftCard(responseObj.gmail_draft));
+    }
   }
 
   row.appendChild(avatar);
@@ -489,6 +494,74 @@ function renderPydanticExpander(ragAnswer) {
     </div>
   `;
   return container;
+}
+
+function renderGmailDraftCard(draft) {
+  const card = document.createElement('div');
+  card.className = 'gmail-draft-card';
+
+  const recipient = draft.recipient || '';
+  const subject = draft.subject || 'Draft Email';
+  const body = draft.body || '';
+  const composeUrl = draft.gmail_compose_url || '#';
+
+  card.innerHTML = `
+    <div class="gmail-card-header">
+      <div class="gmail-card-brand">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+        </svg>
+        <span>Gmail Draft Preparation</span>
+      </div>
+      <span class="gmail-draft-badge">Draft Ready (Not Sent)</span>
+    </div>
+
+    <div class="gmail-fields">
+      <div class="gmail-field-row">
+        <span class="gmail-field-label">To:</span>
+        <span class="gmail-field-value">
+          <code class="gmail-recipient-pill">${escapeHtml(recipient)}</code>
+        </span>
+      </div>
+      <div class="gmail-field-row">
+        <span class="gmail-field-label">Subject:</span>
+        <span class="gmail-field-value"><strong>${escapeHtml(subject)}</strong></span>
+      </div>
+    </div>
+
+    <div class="gmail-body-preview">${escapeHtml(body)}</div>
+
+    <div class="gmail-card-actions">
+      <a href="${composeUrl}" target="_blank" rel="noopener noreferrer" class="btn-gmail-open">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        <span>Open & Review in Gmail</span>
+      </a>
+      <button type="button" class="btn-gmail-copy">
+        📋 <span>Copy Email Body</span>
+      </button>
+    </div>
+
+    <div class="gmail-security-note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <span>Safe Mode: Email was not sent automatically. Click 'Open & Review in Gmail' to review and click Send yourself.</span>
+    </div>
+  `;
+
+  // Attach copy event
+  const copyBtn = card.querySelector('.btn-gmail-copy');
+  copyBtn?.addEventListener('click', () => {
+    navigator.clipboard.writeText(body).then(() => {
+      copyBtn.querySelector('span').textContent = 'Copied to Clipboard!';
+      setTimeout(() => {
+        copyBtn.querySelector('span').textContent = 'Copy Email Body';
+      }, 2000);
+    });
+  });
+
+  return card;
 }
 
 // Basic Markdown & Code Block Formatter

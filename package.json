@@ -1,7 +1,7 @@
 {
-  "name": "self-instruct-rag",
+  "name": "baasha-agent",
   "version": "2.0.0",
-  "description": "Professional, creative and interactive AI Assistant for SELF-INSTRUCT paper with ReAct agent, live tools and isolated thread memory.",
+  "description": "Baasha Agent - Professional, creative and interactive AI Assistant with ReAct agent, Gmail drafting tool, live tools and isolated thread memory.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

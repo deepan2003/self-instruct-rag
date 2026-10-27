@@ -139,11 +139,11 @@ process.on('SIGTERM', () => {
 ensurePythonRunning().then(() => {
   app.listen(PORT, () => {
     console.log(`\n=======================================================`);
-    console.log(`🚀 SELF-INSTRUCT Interactive AI Assistant running!`);
+    console.log(`⚡ BAASHA AGENT - ReAct Intelligence Engine running!`);
     console.log(`👉 OPEN THIS IN YOUR BROWSER: http://localhost:${PORT}`);
     console.log(`👉 OR: http://127.0.0.1:${PORT}`);
     console.log(`⚠️  NOTE: Port ${PYTHON_PORT} is the internal Python API bridge.`);
-    console.log(`   Always use port ${PORT} for the interactive UI.`);
+    console.log(`   Always use port ${PORT} for the Baasha Agent UI.`);
     console.log(`=======================================================\n`);
   });
 });

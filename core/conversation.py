@@ -271,53 +271,53 @@ class ConversationHandler:
 
         elif intent == "greeting":
             answer = (
-                "Hello! 👋 I'm your interactive AI research assistant for the **SELF-INSTRUCT** paper "
-                "(*Aligning Language Models with Self-Generated Instructions*).\n\n"
-                "I'm here to answer your questions with verified facts and page citations. Feel free to ask me anything, such as:\n"
-                "- *What are the 4 steps in the automatic instruction generation pipeline?*\n"
-                "- *How many instructions and instances were generated from GPT-3?*\n"
-                "- *What were the benchmark evaluation results on SuperNI?*\n"
-                "- *What filtering heuristics were used to ensure quality?*\n\n"
+                "Hello! 👋 I am **Baasha Agent**, your autonomous ReAct AI assistant.\n\n"
+                "I am equipped with specialized tools and deep intelligence to assist you:\n"
+                "- ✉️ **Gmail Drafting Tool**: Draft professional emails with recipient verification ready for you to send\n"
+                "- 🌦️ **Tamil Nadu Weather**: Real-time live temperature, humidity, and forecast across 38 districts\n"
+                "- 🌐 **Tavily Live News**: Real-time breaking news and web intelligence\n"
+                "- 💻 **Python Sandbox**: Instant code execution and stdout/stderr output\n"
+                "- 📖 **SELF-INSTRUCT RAG**: Verified answers with exact paper citations & anti-hallucination checks\n\n"
                 "How can I help you today?"
             )
-            summary = "Friendly greeting and assistant introduction."
+            summary = "Friendly greeting and Baasha Agent introduction."
             key_findings = [
-                "Pipeline: 4 steps (instruction generation, classification check, input/output generation, filtering)",
-                "Dataset: 52k instructions and 82k instances generated",
-                "Evaluation: Human evaluation & SuperNI benchmark comparison",
-                "Safety: Fully guarded against injections with claim-level grounding"
+                "Agent: Baasha Agent (ReAct Multi-Tool Orchestrator)",
+                "Tools: Gmail Draft, Tamil Nadu Weather, Tavily News, Python Code Runner, RAG Citations",
+                "Safety: Guardrailed memory with strict thread isolation"
             ]
 
         elif intent == "how_are_you":
             # Multiple varied responses so it never repeats the same answer
             responses = [
-                "I'm doing great, thanks for asking! 😊 Ready to help you explore the **SELF-INSTRUCT** paper or just chat. What's on your mind?",
-                "Hey, I'm doing awesome! 😄 Thanks for checking in. What can I help you with today?",
-                "I'm great, appreciate you asking! 🙌 Whether it's research questions or casual chat, I'm here for you!",
-                "Doing really well, thank you! 😊 Always happy to have a good conversation. What would you like to explore?",
-                "I'm fantastic, thanks! 🌟 Ready and excited to help. Ask me anything or let's just chat!",
+                "I'm doing great, thanks for asking! 😊 **Baasha Agent** is fully active and ready to help you with research, Gmail drafting, live weather, or code execution. What's on your mind?",
+                "Hey, I'm doing awesome! 😄 Baasha Agent is ready for action. What can I do for you today?",
+                "I'm great, appreciate you asking! 🙌 Whether it's drafting an email, checking live weather in Tamil Nadu, or running Python code, I'm here for you!",
+                "Doing really well, thank you! 😊 Always ready to assist. What would you like to explore?",
+                "I'm fantastic, thanks! 🌟 Baasha Agent is standing by. Ask me anything or let's draft an email!",
                 "All good on my end! 😎 How about you? Anything I can help with today?",
             ]
             answer = cls._pick_varied(query, responses)
             summary = "Friendly conversational check-in."
             key_findings = [
-                "Assistant status: Ready and active",
-                "Knowledge base: SELF-INSTRUCT paper indexed and grounded",
+                "Assistant: Baasha Agent ready and active",
+                "Subsystems: ReAct Engine, Gmail Tool, Weather Tool, Code Runner, Tavily Search, RAG",
                 "Capabilities: Citation retrieval, anti-hallucination verification"
             ]
 
         elif intent == "identity":
             answer = (
-                "I am a specialized conversational RAG assistant built for the **SELF-INSTRUCT** paper "
-                "(*Aligning Language Models with Self-Generated Instructions*, Wang et al., 2022).\n\n"
+                "I am **Baasha Agent**, an autonomous ReAct AI assistant built for multi-tool intelligence and research.\n\n"
                 "**What I can do for you:**\n"
-                "1. 📖 **Answer Research Questions**: Explain methodology, pipeline steps, heuristics, and findings.\n"
-                "2. 🛡️ **Security Guardrails**: Filter prompt injections, adversarial overrides, and out-of-scope spam.\n"
-                "3. 🎯 **Anti-Hallucination Verification**: Cross-verify every statement against retrieved paper passages with exact page numbers.\n"
-                "4. 📦 **Structured Output**: Provide validated Pydantic JSON schemas (`answer` + `citations`).\n\n"
-                "What would you like to explore?"
+                "1. ✉️ **Gmail Drafting**: Compose structured, professional email drafts with recipient verification ready for you to review and send.\n"
+                "2. 🌦️ **Tamil Nadu Weather**: Live meteorological reports and forecasts across 38 districts in Tamil Nadu.\n"
+                "3. 🌐 **Tavily Live Search**: Breaking news, current affairs, and web intelligence.\n"
+                "4. 💻 **Python Code Execution**: Run Python scripts in a safe sandbox and view execution metrics.\n"
+                "5. 📖 **SELF-INSTRUCT RAG**: Rigorous research extraction from the ACL 2023 paper with exact page citations.\n"
+                "6. 🛡️ **Multi-layer Guardrails**: Full defense against prompt injection, harmful content, and data exfiltration.\n\n"
+                "What would you like to do?"
             )
-            summary = "System capabilities and identity summary."
+            summary = "Baasha Agent capabilities and identity summary."
             key_findings = [
                 "Paper: SELF-INSTRUCT (Wang et al., 2022)",
                 "Guardrails: Multi-layer prompt injection & scope defense",

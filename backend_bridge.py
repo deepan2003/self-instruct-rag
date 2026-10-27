@@ -57,7 +57,7 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
                 return
             self._send_json(200, {
                 "status": "ok",
-                "service": "SELF-INSTRUCT RAG Bridge",
+                "service": "Baasha Agent API Bridge",
                 "stats": stats,
                 "active_threads": memory_mgr.get_all_threads()
             })
@@ -66,7 +66,7 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
         if self.path == "/api/health":
             self._send_json(200, {
                 "status": "ok",
-                "service": "SELF-INSTRUCT RAG Bridge",
+                "service": "Baasha Agent API Bridge",
                 "stats": stats,
                 "active_threads": memory_mgr.get_all_threads()
             })

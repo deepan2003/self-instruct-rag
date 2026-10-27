@@ -4,6 +4,7 @@ import re
 import time
 import subprocess
 import requests
+import urllib.parse
 from typing import Dict, Any, Optional, List, Tuple
 
 def load_env_file():
@@ -401,12 +402,148 @@ class TamilNaduWeatherTool:
         return "\n".join(md)
 
 
+class GmailDraftTool:
+    """
+    Gmail Draft Preparation Tool for Baasha Agent.
+    Prepares a clean, professional email draft with recipient mail ID, subject, and body.
+    IMPORTANT: This tool prepares a draft ready for the user to review and send.
+    It NEVER sends the email automatically.
+    """
+    EMAIL_REGEX = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
+
+    INTENT_REGEX = re.compile(
+        r"\b(draft\s+(a\s+|an\s+)?(mail|email)|send\s+(a\s+|an\s+)?(mail|email)|compose\s+(a\s+|an\s+)?(mail|email)|"
+        r"write\s+(a\s+|an\s+)?(mail|email)|prepare\s+(a\s+|an\s+)?(mail|email)|create\s+(a\s+|an\s+)?(mail|email)|"
+        r"email\s+draft|mail\s+draft|gmail|mail\s+to|email\s+to)\b",
+        re.IGNORECASE
+    )
+
+    @classmethod
+    def extract_email(cls, text: str) -> Optional[str]:
+        match = cls.EMAIL_REGEX.search(text)
+        return match.group(0) if match else None
+
+    @classmethod
+    def is_email_query(cls, text: str) -> bool:
+        return bool(cls.INTENT_REGEX.search(text))
+
+    @classmethod
+    def generate_gmail_url(cls, recipient: str, subject: str, body: str) -> str:
+        base = "https://mail.google.com/mail/?view=cm&fs=1"
+        params = {
+            "to": recipient,
+            "su": subject,
+            "body": body
+        }
+        return base + "&" + urllib.parse.urlencode(params)
+
+    @classmethod
+    def create_draft(cls, recipient: str, subject: str, body: str) -> Dict[str, Any]:
+        url = cls.generate_gmail_url(recipient, subject, body)
+        return {
+            "success": True,
+            "tool": "gmail_draft",
+            "recipient": recipient,
+            "subject": subject,
+            "body": body,
+            "gmail_compose_url": url,
+            "auto_sent": False,
+            "status": "DRAFT_READY",
+            "message": "Draft created and ready for user to review and send in Gmail."
+        }
+
+    @classmethod
+    def compose_content_heuristic(cls, query: str, recipient: str = "") -> Tuple[str, str]:
+        """Heuristically generates appropriate subject and body from a query if LLM is unavailable."""
+        q_lower = query.lower()
+        if any(w in q_lower for w in ["leave", "sick", "vacation", "holiday", "absent", "off"]):
+            subject = "Leave Request - Notification of Absence"
+            body = (
+                "Dear Sir/Madam,\n\n"
+                "I am writing to formally request leave. Please consider my application for leave "
+                "due to personal/health reasons. I will ensure all pending urgent responsibilities are updated "
+                "and handed over beforehand.\n\n"
+                "Thank you for your understanding and consideration.\n\n"
+                "Warm regards,\n"
+                "[Your Name]"
+            )
+        elif any(w in q_lower for w in ["meeting", "reschedule", "schedule", "sync", "call", "appointment"]):
+            subject = "Meeting Request: Discussion & Synchronization"
+            body = (
+                "Dear Colleague,\n\n"
+                "I hope this message finds you well. I would like to schedule/update a meeting to discuss our "
+                "upcoming project goals and collaborate on the next milestones. Please let me know your available time slots.\n\n"
+                "Looking forward to connecting.\n\n"
+                "Best regards,\n"
+                "[Your Name]"
+            )
+        elif any(w in q_lower for w in ["delay", "apology", "sorry", "extension"]):
+            subject = "Update Regarding Project Timeline & Delivery"
+            body = (
+                "Dear Team,\n\n"
+                "I am writing to provide an important update regarding our project timeline. Due to unexpected challenges, "
+                "there will be a slight delay. We are actively working to wrap up the remaining tasks with high quality.\n\n"
+                "Thank you for your patience and support.\n\n"
+                "Sincerely,\n"
+                "[Your Name]"
+            )
+        else:
+            clean_sub = re.sub(cls.INTENT_REGEX, "", query).strip()
+            clean_sub = re.sub(r'to\s+[^\s@]+@[^\s]+', '', clean_sub).strip()
+            subject = f"Regarding: {clean_sub.capitalize() if clean_sub else 'Project Communication'}"
+            body = (
+                f"Hello,\n\n"
+                f"I am writing to you regarding the following matter:\n\n"
+                f"{clean_sub if clean_sub else query}\n\n"
+                f"Please let me know your thoughts or feedback at your earliest convenience.\n\n"
+                f"Best regards,\n"
+                f"[Your Name]"
+            )
+        return subject, body
+
+    @classmethod
+    def format_markdown(cls, draft: Dict[str, Any]) -> str:
+        recipient = draft.get("recipient", "")
+        subject = draft.get("subject", "No Subject")
+        body = draft.get("body", "").strip()
+        url = draft.get("gmail_compose_url", "#")
+
+        lines = [
+            "### ✉️ Gmail Draft Created *(Ready for Review & Send)*\n",
+            "> 🔒 **Safety Notice:** This email has been drafted and prepared in Gmail. **It has NOT been sent automatically.** You can review, edit, and click Send yourself.\n",
+            "| Field | Details |",
+            "| :--- | :--- |",
+            f"| 👤 **To (Recipient Mail ID)** | `{recipient}` |",
+            f"| 📌 **Subject** | **{subject}** |",
+            "| 📝 **Status** | 🟢 **Draft Prepared** *(Ready for user to send)* |",
+            "",
+            "#### ✉️ Drafted Message Preview:",
+            f"```text\n{body}\n```",
+            "",
+            f"👉 **[🚀 Open & Send in Gmail]({url})** *(Opens pre-filled Gmail compose window)*",
+            "",
+            "*(You can review the draft in Gmail and hit Send when satisfied!)*"
+        ]
+        return "\n".join(lines)
+
+    @classmethod
+    def prompt_for_recipient_markdown(cls, query: str = "") -> str:
+        return (
+            "### ✉️ Gmail Drafting Tool — Recipient Required\n\n"
+            "I'm ready to draft your email! 📝\n\n"
+            "Before I prepare the draft in Gmail, **please provide the recipient's Email ID** "
+            "(e.g., `recipient@example.com`, `manager@company.com`, or `hr@organization.com`).\n\n"
+            "*Once you provide the mail ID, I will immediately compose the subject line and email body ready for you to review and send in Gmail.*"
+        )
+
+
 class ToolRouter:
     """
     Detects whether a user prompt intends to trigger:
     1) Live Weather (Tamil Nadu)
     2) Python Code Execution
     3) Tavily Live Web & News Search
+    4) Gmail Draft Preparation
     """
     WEATHER_REGEX = re.compile(
         r"\b(weather|temperature|climate|rainfall|rain|forecast|sunny|humidity|is\s+it\s+hot|is\s+it\s+raining)\b",
@@ -423,6 +560,13 @@ class ToolRouter:
         re.IGNORECASE
     )
 
+    GMAIL_REGEX = re.compile(
+        r"\b(draft\s+(a\s+|an\s+)?(mail|email)|send\s+(a\s+|an\s+)?(mail|email)|compose\s+(a\s+|an\s+)?(mail|email)|"
+        r"write\s+(a\s+|an\s+)?(mail|email)|prepare\s+(a\s+|an\s+)?(mail|email)|create\s+(a\s+|an\s+)?(mail|email)|"
+        r"email\s+draft|mail\s+draft|gmail|mail\s+to|email\s+to)\b",
+        re.IGNORECASE
+    )
+
     @classmethod
     def identify_tool(cls, query: str) -> Optional[str]:
         q = query.strip()
@@ -431,14 +575,17 @@ class ToolRouter:
         if cls.CODE_EXEC_REGEX.search(q):
             return "code_execution"
 
-        # 2. Weather check (especially if Tamil Nadu or any district or weather keyword is mentioned)
+        # 2. Gmail drafting
+        if cls.GMAIL_REGEX.search(q) or GmailDraftTool.extract_email(q):
+            return "gmail"
+
+        # 3. Weather check (especially if Tamil Nadu or any district or weather keyword is mentioned)
         if cls.WEATHER_REGEX.search(q):
-            # Check if any TN district or general weather
             q_lower = q.lower()
             if any(d in q_lower for d in TamilNaduWeatherTool.TN_DISTRICTS) or "weather" in q_lower or "temperature" in q_lower:
                 return "weather"
 
-        # 3. Live News & Tavily Search
+        # 4. Live News & Tavily Search
         if cls.TAVILY_NEWS_REGEX.search(q):
             return "tavily_search"
 

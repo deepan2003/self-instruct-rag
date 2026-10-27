@@ -340,5 +340,48 @@ class TestSelfInstructRAG(unittest.TestCase):
         self.assertTrue(res.guardrails.is_safe)
         self.assertTrue("tavily" in res.answer.lower() or "quantum" in res.answer.lower() or "news" in res.answer.lower())
 
+    def test_tool_gmail_ask_recipient_when_missing(self):
+        """Gmail tool must ask the user for recipient mail ID if missing in the query."""
+        res = self.pipeline.query("draft a mail for leave request")
+        self.assertIn(res.status, ["TOOL_GMAIL_AWAITING_RECIPIENT", "CONVERSATIONAL"])
+        self.assertTrue(res.guardrails.is_safe)
+        # Answer must prompt user for email address
+        self.assertTrue(
+            "email" in res.answer.lower() or "mail id" in res.answer.lower() or "recipient" in res.answer.lower()
+        )
+        self.assertIsNone(res.gmail_draft)
+
+    def test_tool_gmail_draft_with_recipient(self):
+        """Gmail tool should draft email when recipient email is provided and never auto-send."""
+        res = self.pipeline.query("draft an email to manager@company.com requesting 2 days sick leave")
+        self.assertEqual(res.status, "TOOL_GMAIL")
+        self.assertTrue(res.guardrails.is_safe)
+        self.assertIsNotNone(res.gmail_draft)
+        self.assertEqual(res.gmail_draft["recipient"], "manager@company.com")
+        self.assertFalse(res.gmail_draft["auto_sent"])
+        self.assertIn("https://mail.google.com/mail/", res.gmail_draft["gmail_compose_url"])
+        self.assertIn("manager%40company.com", res.gmail_draft["gmail_compose_url"])
+        self.assertIn("Leave Request", res.gmail_draft["subject"])
+
+    def test_tool_gmail_multi_turn_email_provision(self):
+        """If user provides mail ID in turn 2, agent should draft the email using context."""
+        history = [
+            {"role": "user", "content": "draft a mail for meeting schedule"},
+            {"role": "assistant", "content": "Please provide the recipient's Email ID to draft this mail."}
+        ]
+        res = self.pipeline.query("colleague@techcorp.com", chat_history=history)
+        self.assertEqual(res.status, "TOOL_GMAIL")
+        self.assertIsNotNone(res.gmail_draft)
+        self.assertEqual(res.gmail_draft["recipient"], "colleague@techcorp.com")
+        self.assertFalse(res.gmail_draft["auto_sent"])
+        self.assertIn("Meeting", res.gmail_draft["subject"])
+
+    def test_tool_gmail_never_auto_sends(self):
+        """System must always mark Gmail drafts as not sent and ready for user review."""
+        res = self.pipeline.query("send an email to client@example.com about project update")
+        self.assertEqual(res.status, "TOOL_GMAIL")
+        self.assertFalse(res.gmail_draft["auto_sent"])
+        self.assertIn("NOT been sent automatically", res.answer)
+
 if __name__ == "__main__":
     unittest.main()

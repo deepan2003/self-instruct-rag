@@ -7,7 +7,7 @@ import requests
 from typing import Dict, Any, Optional, List, Tuple
 from core.document import Document
 from core.models import StructuredRAGResponse, GuardrailReport, GroundingEvaluation, ConfidenceLevel, GuardrailStatus, SourceCitation
-from core.tools import TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool, ToolRouter
+from core.tools import TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool, GmailDraftTool, ToolRouter
 from core.conversation import ConversationHandler
 
 def load_env_file():
@@ -129,12 +129,41 @@ class ReActAgent:
                     "required": ["query"]
                 }
             }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "gmail_draft_tool",
+                "description": (
+                    "Draft an email in Gmail with recipient email ID, subject, and body. "
+                    "Prepares the draft for the user to review and send. NEVER sends the email automatically. "
+                    "If the user hasn't provided a recipient email ID, DO NOT guess an email; ask them for the email ID first."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "recipient_email": {
+                            "type": "string",
+                            "description": "Recipient's valid email address (e.g. user@company.com)"
+                        },
+                        "subject": {
+                            "type": "string",
+                            "description": "Concise, professional email subject line"
+                        },
+                        "body": {
+                            "type": "string",
+                            "description": "Professional, well-formatted email body content"
+                        }
+                    },
+                    "required": ["recipient_email", "subject", "body"]
+                }
+            }
         }
     ]
 
     SYSTEM_PROMPT = (
-        "You are the Main Orchestrator Agent for the SELF-INSTRUCT Research Assistant.\n"
-        "Your task is to orchestrate and solve user requests using a ReAct (Reason + Act) loop:\n\n"
+        "You are Baasha Agent, an autonomous, highly capable AI assistant with a ReAct (Reason + Act) loop.\n"
+        "Your task is to orchestrate and solve user requests using your specialized tools and sub-agents:\n\n"
         "1. Decision & Tool Calling:\n"
         "   - If the user asks about the SELF-INSTRUCT paper, instruction generation pipeline, "
         "     dataset numbers, filtering heuristics, or benchmark results, call `rag_search`.\n"
@@ -142,12 +171,18 @@ class ReActAgent:
         "     call `tamil_nadu_weather`.\n"
         "   - If the user requests to run/execute Python code, call `python_code_runner`.\n"
         "   - If the user asks for live news, breaking stories, or real-time web searches, call `tavily_live_news`.\n"
-        "   - For general greetings, pleasantries, or simple friendly conversations, reply warmly and directly without calling tools.\n\n"
+        "   - If the user asks to draft, write, compose, or send an email/mail:\n"
+        "     * Check if the user has provided the recipient's mail ID (e.g. user@domain.com) in their prompt or conversation.\n"
+        "     * If the recipient mail ID is MISSING, DO NOT call `gmail_draft_tool`. Instead, politely ask the user: "
+        "       'Please provide the recipient's email address (e.g., name@example.com) so I can prepare this draft for you.'\n"
+        "     * If the recipient mail ID is PRESENT, call `gmail_draft_tool` with recipient_email, subject, and body.\n"
+        "     * CRITICAL: The email must NEVER be sent automatically; it is solely drafted and prepared ready for the user to review and send.\n"
+        "   - For general greetings, pleasantries, or simple friendly conversations, reply as Baasha Agent warmly and directly without calling tools.\n\n"
         "2. Grounded Synthesis:\n"
         "   - When an observation is returned from a tool, synthesize a complete, well-structured, "
         "     and easy-to-read final answer using clear bullet points and bold highlights.\n"
         "   - Base all claims strictly on the provided observation without hallucinating unstated facts.\n"
-        "   - Maintain a friendly, supportive tone at all times."
+        "   - Maintain a confident, helpful, and courteous tone as Baasha Agent."
     )
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
@@ -287,6 +322,7 @@ class ReActAgent:
         retrieved_sources: List[SourceCitation] = []
         status_tag = "SUCCESS"
         observation_text = ""
+        extra_gmail_draft = None
 
         if func_name == "rag_search":
             search_q = func_args.get("query", query)
@@ -306,6 +342,34 @@ class ReActAgent:
             else:
                 observation_text = "No direct passages found in the SELF-INSTRUCT paper matching this query."
                 status_tag = "UNSUPPORTED_CONTEXT"
+
+        elif func_name == "gmail_draft_tool":
+            recipient = func_args.get("recipient_email", "").strip()
+            subject = func_args.get("subject", "").strip()
+            body = func_args.get("body", "").strip()
+
+            if not recipient or "@" not in recipient:
+                extracted = GmailDraftTool.extract_email(query)
+                if extracted:
+                    recipient = extracted
+                elif chat_history:
+                    for prev_m in reversed(chat_history[-4:]):
+                        pe = GmailDraftTool.extract_email(prev_m.get("content", ""))
+                        if pe:
+                            recipient = pe
+                            break
+
+            if not recipient or "@" not in recipient:
+                observation_text = GmailDraftTool.prompt_for_recipient_markdown(query)
+                status_tag = "TOOL_GMAIL_AWAITING_RECIPIENT"
+            else:
+                if not subject or not body:
+                    h_sub, h_body = GmailDraftTool.compose_content_heuristic(query, recipient)
+                    subject = subject or h_sub
+                    body = body or h_body
+                extra_gmail_draft = GmailDraftTool.create_draft(recipient, subject, body)
+                observation_text = GmailDraftTool.format_markdown(extra_gmail_draft)
+                status_tag = "TOOL_GMAIL"
 
         elif func_name == "tamil_nadu_weather":
             loc = func_args.get("location", query)
@@ -386,7 +450,8 @@ class ReActAgent:
             ),
             grounding=grounding_eval,
             latency_ms=round(latency, 2),
-            status=status_tag
+            status=status_tag,
+            gmail_draft=extra_gmail_draft
         )
 
     def _fallback_execution(
@@ -448,6 +513,58 @@ class ReActAgent:
                 latency_ms=round(latency, 2),
                 status="TOOL_TAVILY"
             )
+
+        if tool == "gmail":
+            recipient = GmailDraftTool.extract_email(query)
+            topic = query
+
+            # If recipient is not directly in current query, check chat_history
+            if not recipient and chat_history:
+                for prev_msg in reversed(chat_history[-4:]):
+                    pe = GmailDraftTool.extract_email(prev_msg.get("content", ""))
+                    if pe:
+                        recipient = pe
+                        break
+
+            # If current query is mostly an email, find topic from recent history
+            if recipient and not any(w in query.lower() for w in ["leave", "meeting", "delay", "project", "schedule", "work", "update", "draft"]) and chat_history:
+                for prev_msg in reversed(chat_history[-4:]):
+                    if prev_msg.get("role") == "user":
+                        prev_text = prev_msg.get("content", "")
+                        if GmailDraftTool.is_email_query(prev_text):
+                            topic = prev_text
+                            break
+
+            latency = (time.time() - start_time) * 1000
+            if not recipient:
+                ans = GmailDraftTool.prompt_for_recipient_markdown(query)
+                return StructuredRAGResponse(
+                    query=query,
+                    answer=ans,
+                    summary="Gmail Drafting Tool — Recipient Email Required.",
+                    key_findings=["Action: gmail_draft", "Status: AWAITING_RECIPIENT_EMAIL"],
+                    sources=[],
+                    guardrails=GuardrailReport(is_safe=True, status=GuardrailStatus.PASSED, passed_injection_check=True, passed_scope_check=True, flagged_patterns=[], message="Safe"),
+                    grounding=GroundingEvaluation(is_grounded=True, faithfulness_score=1.0, confidence=ConfidenceLevel.HIGH, grounded_claims=["Recipient required"], unsupported_claims=[], verification_notes="Awaiting recipient email ID"),
+                    latency_ms=round(latency, 2),
+                    status="TOOL_GMAIL_AWAITING_RECIPIENT"
+                )
+            else:
+                subject, body = GmailDraftTool.compose_content_heuristic(topic, recipient=recipient)
+                draft_data = GmailDraftTool.create_draft(recipient, subject, body)
+                ans = GmailDraftTool.format_markdown(draft_data)
+                return StructuredRAGResponse(
+                    query=query,
+                    answer=ans,
+                    summary=f"Gmail draft prepared for {recipient}.",
+                    key_findings=[f"Recipient: {recipient}", f"Subject: {subject}", "Auto-sent: False (Draft Only)"],
+                    sources=[],
+                    guardrails=GuardrailReport(is_safe=True, status=GuardrailStatus.PASSED, passed_injection_check=True, passed_scope_check=True, flagged_patterns=[], message="Safe"),
+                    grounding=GroundingEvaluation(is_grounded=True, faithfulness_score=1.0, confidence=ConfidenceLevel.HIGH, grounded_claims=[f"Drafted email to {recipient}"], unsupported_claims=[], verification_notes="Gmail draft created"),
+                    latency_ms=round(latency, 2),
+                    status="TOOL_GMAIL",
+                    gmail_draft=draft_data
+                )
 
         # RAG / Conversation
         intent = ConversationHandler.classify_intent(query)

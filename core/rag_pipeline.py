@@ -10,7 +10,7 @@ from core.generator import RAGGenerator
 from core.guardrails import InputGuardrails
 from core.hallucination import HallucinationPreventer
 from core.conversation import ConversationHandler
-from core.tools import ToolRouter, TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool
+from core.tools import ToolRouter, TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool, GmailDraftTool
 from core.agent import ReActAgent
 from core.models import StructuredRAGResponse, GuardrailReport, GroundingEvaluation, ConfidenceLevel, GuardrailStatus
 

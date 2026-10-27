@@ -57,6 +57,7 @@ class StructuredRAGResponse(BaseModel):
     grounding: GroundingEvaluation = Field(..., description="Post-generation anti-hallucination verification report")
     latency_ms: float = Field(..., description="Total pipeline processing time in milliseconds")
     status: str = Field(default="SUCCESS", description="Execution status: SUCCESS, CONVERSATIONAL, BLOCKED_GUARDRAILS, or UNSUPPORTED_CONTEXT")
+    gmail_draft: Optional[dict] = Field(default=None, description="Pre-filled Gmail draft metadata when Gmail tool is executed")
 
     @property
     def citations(self) -> List[SourceCitation]:
