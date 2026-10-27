@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SELF-INSTRUCT AI Research Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Background Glow Accents -->
+  <div class="bg-gradient-glow glow-1"></div>
+  <div class="bg-gradient-glow glow-2"></div>
+
+  <!-- STARTUP / THREAD LOGIN MODAL -->
+  <div id="threadModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-badge">
+        <span class="badge-dot"></span>
+        <span>Isolated Memory Environment</span>
+      </div>
+      <h2 class="modal-title">🔐 Start Research Session</h2>
+      <p class="modal-desc">
+        Enter your <strong>Username</strong> or <strong>Thread ID</strong> to start. 
+        Each thread maintains isolated conversational memory — discussions in one session will never leak to another.
+      </p>
+
+      <form id="newThreadForm" class="modal-form">
+        <div class="input-group">
+          <label for="threadInput">Thread ID / Username</label>
+          <input 
+            type="text" 
+            id="threadInput" 
+            placeholder="e.g. deepak, research_team, dev_thread_1" 
+            required 
+            autocomplete="off" 
+            autofocus
+          >
+        </div>
+        <button type="submit" class="btn-primary btn-glow">
+          <span>Start Session</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+      </form>
+
+      <div id="existingThreadsSection" class="modal-existing" style="display: none;">
+        <div class="divider"><span>OR RESUME PREVIOUS SESSION</span></div>
+        <div class="existing-picker">
+          <select id="existingThreadsSelect">
+            <option value="">Select a previous thread...</option>
+          </select>
+          <button type="button" id="resumeThreadBtn" class="btn-secondary">Resume</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-layout" id="appLayout">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">🤖</div>
+          <div class="brand-text">
+            <h3>SELF-INSTRUCT</h3>
+            <span>RAG & ReAct Agent</span>
+          </div>
+        </div>
+        <button id="sidebarToggle" class="btn-icon" title="Toggle Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Active User Card -->
+      <div class="active-user-card">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-info">
+          <span class="user-label">ACTIVE THREAD</span>
+          <span class="user-name" id="displayThreadName">default</span>
+        </div>
+        <span class="status-indicator" title="Connected"></span>
+      </div>
+
+      <!-- Session Actions -->
+      <div class="session-actions">
+        <button id="switchThreadBtn" class="btn-action">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Switch User</span>
+        </button>
+        <button id="newThreadBtn" class="btn-action">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>New Thread</span>
+        </button>
+      </div>
+
+      <!-- Saved Threads Drawer -->
+      <div class="sidebar-section">
+        <div class="section-title">
+          <span>SAVED SESSIONS</span>
+          <span class="badge" id="threadCountBadge">0</span>
+        </div>
+        <div class="threads-list" id="threadsList">
+          <!-- Dynamic thread pills -->
+        </div>
+      </div>
+
+      <!-- RAG Settings -->
+      <div class="sidebar-section">
+        <div class="section-title">RAG CONFIGURATION</div>
+        <div class="slider-control">
+          <div class="slider-label">
+            <span>Top-K Chunks</span>
+            <span class="slider-value" id="topKVal">4</span>
+          </div>
+          <input type="range" id="topKSlider" min="1" max="8" value="4" step="1">
+        </div>
+        <div class="slider-control">
+          <div class="slider-label">
+            <span>Similarity Threshold</span>
+            <span class="slider-value" id="thresholdVal">0.10</span>
+          </div>
+          <input type="range" id="thresholdSlider" min="0.00" max="0.50" value="0.10" step="0.01">
+        </div>
+      </div>
+
+      <!-- System Telemetry Status -->
+      <div class="sidebar-section">
+        <div class="section-title">ACTIVE SUBSYSTEMS</div>
+        <div class="telemetry-grid">
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>120B Main Agent</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Tamil Nadu Weather</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Tavily Live News</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Python Sandbox</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button id="clearThreadBtn" class="btn-danger-outline" title="Clear current thread memory">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Clear This Session</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- CHAT VIEWPORT -->
+    <main class="chat-viewport">
+      
+      <!-- Top App Bar -->
+      <header class="chat-header">
+        <div class="chat-header-left">
+          <button id="mobileMenuBtn" class="btn-icon mobile-only">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="chat-title-info">
+            <h2>Research Workspace</h2>
+            <div class="header-tags">
+              <span class="tag-pill" id="activeThreadPill">Thread: default</span>
+              <span class="tag-pill tag-purple">Groq 120B ReAct Brain</span>
+              <span class="tag-pill tag-green">Guardrailed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-header-right">
+          <div class="stats-badge">
+            <span class="stat-number">24</span>
+            <span class="stat-name">Sections</span>
+          </div>
+          <div class="stats-badge">
+            <span class="stat-number">36</span>
+            <span class="stat-name">Chunks</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Messages Stream -->
+      <div class="messages-container" id="messagesContainer">
+        
+        <!-- Welcome Hero Banner (Visible when thread is empty) -->
+        <div class="welcome-hero" id="welcomeHero">
+          <div class="hero-badge">ACL 2023 Research Assistant</div>
+          <h1 class="hero-title">How can I assist your research today?</h1>
+          <p class="hero-subtitle">
+            Ask any question about the <strong>SELF-INSTRUCT</strong> paper with anti-hallucination citations, 
+            run Python code in our sandbox, get live weather across Tamil Nadu, or search real-time breaking news.
+          </p>
+
+          <!-- Quick Starter Prompts -->
+          <div class="quick-prompts-grid">
+            <div class="prompt-card" data-prompt="What are the 4 steps in the automatic instruction generation pipeline?">
+              <div class="card-icon">📖</div>
+              <div class="card-text">
+                <strong>4 Pipeline Steps</strong>
+                <span>Explain the core SELF-INSTRUCT data pipeline</span>
+              </div>
+            </div>
+
+            <div class="prompt-card" data-prompt="What is the weather in Chennai right now?">
+              <div class="card-icon">🌦️</div>
+              <div class="card-text">
+                <strong>Chennai Live Weather</strong>
+                <span>Check temperature, humidity and rain telemetry</span>
+              </div>
+            </div>
+
+            <div class="prompt-card" data-prompt="run code: print([x**2 for x in range(6)])">
+              <div class="card-icon">💻</div>
+              <div class="card-text">
+                <strong>Python Sandbox</strong>
+                <span>Execute Python calculations in real-time</span>
+              </div>
+            </div>
+
+            <div class="prompt-card" data-prompt="latest breaking news on AI technology">
+              <div class="card-icon">🌐</div>
+              <div class="card-text">
+                <strong>Live Tavily News</strong>
+                <span>Search real-time AI developments online</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Chat Messages will be appended here -->
+
+      </div>
+
+      <!-- Animated Live Reasoning Status Card (The Checking Phase) -->
+      <div class="reasoning-box-wrapper" id="reasoningBoxWrapper" style="display: none;">
+        <div class="reasoning-card">
+          <div class="reasoning-header">
+            <div class="pulse-loader">
+              <span></span><span></span><span></span>
+            </div>
+            <strong id="reasoningHeaderTitle">⚡ Live Agent Reasoning & Verification Pipeline</strong>
+            <span class="reasoning-badge">ReAct Execution</span>
+          </div>
+          
+          <div class="reasoning-steps">
+            <div class="step-item" id="stepGuardrails">
+              <span class="step-icon">🛡️</span>
+              <span class="step-text">Input Guardrail Inspection (Prompt injection, harmful content, exfiltration checks)</span>
+              <span class="step-status">Checking...</span>
+            </div>
+            <div class="step-item" id="stepAgent">
+              <span class="step-icon">🧠</span>
+              <span class="step-text">Groq 120B Main Agent Reasoning & Sub-Agent Orchestration</span>
+              <span class="step-status">Waiting...</span>
+            </div>
+            <div class="step-item" id="stepExecution">
+              <span class="step-icon">⚡</span>
+              <span class="step-text">Executing Action (RAG Retrieval / Weather API / Code Runner / Tavily News)</span>
+              <span class="step-status">Waiting...</span>
+            </div>
+            <div class="step-item" id="stepGrounding">
+              <span class="step-icon">📦</span>
+              <span class="step-text">Anti-Hallucination Verification & Pydantic Schema Formulation</span>
+              <span class="step-status">Waiting...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Deck -->
+      <footer class="chat-input-deck">
+        <form id="chatForm" class="chat-form">
+          <div class="input-wrapper">
+            <textarea 
+              id="chatInput" 
+              placeholder="Ask a research question, weather in Tamil Nadu, run code, or say hello..." 
+              rows="1" 
+              autocomplete="off"
+            ></textarea>
+            <button type="submit" id="sendBtn" class="send-btn" title="Send message (Enter)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </form>
+        <div class="input-footnote">
+          <span>🔒 Memory isolated per thread</span> • <span>Groq 120B Agent Brain</span> • <span>Multi-layer Guardrails Active</span>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

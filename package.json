@@ -1,0 +1,24 @@
+{
+  "name": "self-instruct-rag",
+  "version": "2.0.0",
+  "description": "Professional, creative and interactive AI Assistant for SELF-INSTRUCT paper with ReAct agent, live tools and isolated thread memory.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "python -m unittest test_rag -v"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "keywords": [
+    "rag",
+    "react-agent",
+    "self-instruct",
+    "ai",
+    "groq"
+  ],
+  "author": "deepan2003",
+  "license": "MIT"
+}

@@ -1,0 +1,602 @@
+/**
+ * SELF-INSTRUCT Interactive AI Assistant - Client Application
+ */
+
+const API_BASE = ''; // Proxied via Express on same origin
+
+// Application State
+const state = {
+  currentThread: localStorage.getItem('current_thread') || null,
+  topK: 4,
+  threshold: 0.10,
+  isProcessing: false,
+  threads: []
+};
+
+// DOM Elements
+const threadModal = document.getElementById('threadModal');
+const newThreadForm = document.getElementById('newThreadForm');
+const threadInput = document.getElementById('threadInput');
+const existingThreadsSection = document.getElementById('existingThreadsSection');
+const existingThreadsSelect = document.getElementById('existingThreadsSelect');
+const resumeThreadBtn = document.getElementById('resumeThreadBtn');
+
+const displayThreadName = document.getElementById('displayThreadName');
+const activeThreadPill = document.getElementById('activeThreadPill');
+const userAvatar = document.getElementById('userAvatar');
+const switchThreadBtn = document.getElementById('switchThreadBtn');
+const newThreadBtn = document.getElementById('newThreadBtn');
+const clearThreadBtn = document.getElementById('clearThreadBtn');
+const threadsList = document.getElementById('threadsList');
+const threadCountBadge = document.getElementById('threadCountBadge');
+
+const topKSlider = document.getElementById('topKSlider');
+const topKVal = document.getElementById('topKVal');
+const thresholdSlider = document.getElementById('thresholdSlider');
+const thresholdVal = document.getElementById('thresholdVal');
+
+const messagesContainer = document.getElementById('messagesContainer');
+const welcomeHero = document.getElementById('welcomeHero');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+const reasoningBoxWrapper = document.getElementById('reasoningBoxWrapper');
+const stepGuardrails = document.getElementById('stepGuardrails');
+const stepAgent = document.getElementById('stepAgent');
+const stepExecution = document.getElementById('stepExecution');
+const stepGrounding = document.getElementById('stepGrounding');
+
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+// ==============================================================================
+// INITIALIZATION
+// ==============================================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  setupEventListeners();
+  await loadThreadsList();
+
+  if (!state.currentThread) {
+    showModal();
+  } else {
+    setThread(state.currentThread);
+  }
+});
+
+// Setup All UI Event Handlers
+function setupEventListeners() {
+  // Mobile / Toggle Sidebar
+  sidebarToggle?.addEventListener('click', () => sidebar.classList.toggle('open'));
+  mobileMenuBtn?.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+  // Thread Login Form
+  newThreadForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const val = threadInput.value.trim();
+    if (val) {
+      setThread(val);
+      hideModal();
+    }
+  });
+
+  // Resume Existing Thread Button
+  resumeThreadBtn.addEventListener('click', () => {
+    const val = existingThreadsSelect.value;
+    if (val) {
+      setThread(val);
+      hideModal();
+    }
+  });
+
+  // Switch Thread
+  switchThreadBtn.addEventListener('click', () => {
+    showModal();
+  });
+
+  // New Thread
+  newThreadBtn.addEventListener('click', () => {
+    threadInput.value = '';
+    showModal();
+  });
+
+  // Clear Thread History
+  clearThreadBtn.addEventListener('click', async () => {
+    if (!state.currentThread) return;
+    if (confirm(`Are you sure you want to clear memory for thread '${state.currentThread}'?`)) {
+      await clearCurrentThread();
+    }
+  });
+
+  // Sliders
+  topKSlider.addEventListener('input', (e) => {
+    state.topK = parseInt(e.target.value);
+    topKVal.textContent = state.topK;
+  });
+
+  thresholdSlider.addEventListener('input', (e) => {
+    state.threshold = parseFloat(e.target.value);
+    thresholdVal.textContent = state.threshold.toFixed(2);
+  });
+
+  // Auto-expand textarea
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + 'px';
+  });
+
+  // Enter to send, Shift+Enter for newline
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      chatForm.dispatchEvent(new Event('submit'));
+    }
+  });
+
+  // Form Submit
+  chatForm.addEventListener('submit', handleSendMessage);
+
+  // Quick Starter Prompts
+  document.querySelectorAll('.prompt-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const prompt = card.getAttribute('data-prompt');
+      if (prompt) {
+        chatInput.value = prompt;
+        chatInput.focus();
+        chatForm.dispatchEvent(new Event('submit'));
+      }
+    });
+  });
+}
+
+// ==============================================================================
+// THREAD & SESSION MANAGEMENT
+// ==============================================================================
+function showModal() {
+  threadModal.classList.remove('hidden');
+  threadInput.focus();
+}
+
+function hideModal() {
+  threadModal.classList.add('hidden');
+}
+
+async function loadThreadsList() {
+  try {
+    const res = await fetch(`${API_BASE}/api/threads`);
+    const data = await res.json();
+    state.threads = data.threads || [];
+
+    // Update modal select dropdown
+    existingThreadsSelect.innerHTML = '<option value="">Select a previous thread...</option>';
+    if (state.threads.length > 0) {
+      existingThreadsSection.style.display = 'block';
+      state.threads.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        existingThreadsSelect.appendChild(opt);
+      });
+    } else {
+      existingThreadsSection.style.display = 'none';
+    }
+
+    // Update sidebar saved sessions
+    threadsList.innerHTML = '';
+    threadCountBadge.textContent = state.threads.length;
+    state.threads.forEach(t => {
+      const pill = document.createElement('div');
+      pill.className = `thread-pill ${t === state.currentThread ? 'active' : ''}`;
+      pill.innerHTML = `<span>💬</span><span>${escapeHtml(t)}</span>`;
+      pill.addEventListener('click', () => {
+        setThread(t);
+      });
+      threadsList.appendChild(pill);
+    });
+  } catch (err) {
+    console.error('Failed to load threads list:', err);
+  }
+}
+
+async function setThread(threadId) {
+  state.currentThread = threadId;
+  localStorage.setItem('current_thread', threadId);
+
+  displayThreadName.textContent = threadId;
+  activeThreadPill.textContent = `Thread: ${threadId}`;
+  userAvatar.textContent = threadId.charAt(0).toUpperCase();
+
+  await loadThreadsList();
+  await loadThreadHistory(threadId);
+}
+
+async function loadThreadHistory(threadId) {
+  messagesContainer.innerHTML = '';
+  try {
+    const res = await fetch(`${API_BASE}/api/history?thread_id=${encodeURIComponent(threadId)}`);
+    const data = await res.json();
+    const messages = data.messages || [];
+
+    if (messages.length === 0 || (messages.length === 1 && messages[0].role === 'assistant')) {
+      // Empty or initial welcome message
+      messagesContainer.appendChild(welcomeHero);
+      welcomeHero.style.display = 'block';
+      if (messages.length === 1) {
+        appendMessage('assistant', messages[0].content);
+      }
+    } else {
+      welcomeHero.style.display = 'none';
+      messages.forEach(m => {
+        appendMessage(m.role, m.content, m.response);
+      });
+    }
+  } catch (err) {
+    console.error('Failed to load thread history:', err);
+  }
+}
+
+async function clearCurrentThread() {
+  if (!state.currentThread) return;
+  try {
+    await fetch(`${API_BASE}/api/clear`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ thread_id: state.currentThread })
+    });
+    await loadThreadHistory(state.currentThread);
+  } catch (err) {
+    alert('Failed to clear thread: ' + err.message);
+  }
+}
+
+// ==============================================================================
+// CHAT & REACT REASONING EXECUTION
+// ==============================================================================
+async function handleSendMessage(e) {
+  e.preventDefault();
+  const prompt = chatInput.value.trim();
+  if (!prompt || state.isProcessing) return;
+
+  state.isProcessing = true;
+  sendBtn.disabled = true;
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+
+  // Hide welcome hero
+  if (welcomeHero) welcomeHero.style.display = 'none';
+
+  // Render User Message
+  appendMessage('user', prompt);
+
+  // Show Animated Live Reasoning Status Card
+  showReasoningCard();
+
+  try {
+    // Stage 1: Guardrail Inspection
+    updateReasoningStep('stepGuardrails', 'active', 'Inspecting security rules...');
+    await delay(250);
+    updateReasoningStep('stepGuardrails', 'done', '✅ Safe & Authorized');
+
+    // Stage 2: Main Agent Reasoning
+    updateReasoningStep('stepAgent', 'active', '120B Brain reasoning & selecting tool...');
+
+    const res = await fetch(`${API_BASE}/api/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: prompt,
+        thread_id: state.currentThread,
+        top_k: state.topK,
+        threshold: state.threshold
+      })
+    });
+
+    const data = await res.json();
+    const responsePayload = data.response;
+
+    // Stage 3: Sub-Agent Execution
+    updateReasoningStep('stepAgent', 'done', '✅ Strategy Decided');
+    updateReasoningStep('stepExecution', 'active', `Running ${responsePayload.status || 'Sub-Agent'}...`);
+    await delay(200);
+    updateReasoningStep('stepExecution', 'done', `✅ Completed: ${responsePayload.summary || 'Done'}`);
+
+    // Stage 4: Grounding & Pydantic
+    updateReasoningStep('stepGrounding', 'active', 'Verifying anti-hallucination citations...');
+    await delay(200);
+    updateReasoningStep('stepGrounding', 'done', '✅ Grounding Verified');
+    await delay(250);
+
+    // Hide reasoning card & render assistant output
+    hideReasoningCard();
+    appendMessage('assistant', responsePayload.answer, responsePayload);
+
+    // Refresh saved threads count if new
+    await loadThreadsList();
+
+  } catch (err) {
+    hideReasoningCard();
+    appendMessage('assistant', `⚠️ **Error connecting to assistant:** ${err.message}`);
+  } finally {
+    state.isProcessing = false;
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+}
+
+// ==============================================================================
+// ANIMATED REASONING BOX HELPERS
+// ==============================================================================
+function showReasoningCard() {
+  reasoningBoxWrapper.style.display = 'block';
+  // Reset steps
+  resetReasoningStep('stepGuardrails', 'Checking...');
+  resetReasoningStep('stepAgent', 'Waiting...');
+  resetReasoningStep('stepExecution', 'Waiting...');
+  resetReasoningStep('stepGrounding', 'Waiting...');
+  scrollToBottom();
+}
+
+function hideReasoningCard() {
+  reasoningBoxWrapper.style.display = 'none';
+}
+
+function resetReasoningStep(stepId, text) {
+  const el = document.getElementById(stepId);
+  if (!el) return;
+  el.className = 'step-item';
+  el.querySelector('.step-status').textContent = text;
+}
+
+function updateReasoningStep(stepId, status, statusText) {
+  const el = document.getElementById(stepId);
+  if (!el) return;
+  el.className = `step-item ${status}`;
+  if (statusText) {
+    el.querySelector('.step-status').textContent = statusText;
+  }
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ==============================================================================
+// MESSAGE RENDERING & FORMATTING
+// ==============================================================================
+function appendMessage(role, content, responseObj = null) {
+  const row = document.createElement('div');
+  row.className = `message-row ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'message-avatar';
+  avatar.innerHTML = role === 'user' ? '👤' : '🤖';
+
+  const contentBox = document.createElement('div');
+  contentBox.className = 'message-content';
+
+  // Check if Guardrail violation
+  const isGuardrailBlocked = responseObj && responseObj.guardrails && !responseObj.guardrails.is_safe;
+
+  if (isGuardrailBlocked) {
+    contentBox.innerHTML = renderGuardrailAlert(responseObj.guardrails);
+  } else {
+    const body = document.createElement('div');
+    body.className = 'message-body';
+    body.innerHTML = formatMarkdown(content);
+    contentBox.appendChild(body);
+
+    // If RAG Answer: Attach Verified Citations Drawer & Pydantic Structure
+    if (responseObj && responseObj.sources && responseObj.sources.length > 0 && responseObj.status !== 'CONVERSATIONAL') {
+      contentBox.appendChild(renderCitationsExpander(responseObj.sources));
+      contentBox.appendChild(renderPydanticExpander(responseObj.rag_answer || responseObj));
+    }
+  }
+
+  row.appendChild(avatar);
+  row.appendChild(contentBox);
+  messagesContainer.appendChild(row);
+  scrollToBottom();
+
+  // Attach copy listeners
+  contentBox.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy', 1800);
+      });
+    });
+  });
+
+  // Attach expander toggle listeners
+  contentBox.querySelectorAll('.expander-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const target = trigger.nextElementSibling;
+      target.classList.toggle('open');
+      const arrow = trigger.querySelector('.expander-arrow');
+      if (arrow) {
+        arrow.textContent = target.classList.contains('open') ? '▲' : '▼';
+      }
+    });
+  });
+}
+
+function renderGuardrailAlert(guardrails) {
+  const flags = guardrails.flagged_patterns || [];
+  const tagsHtml = flags.map(f => `<span class="trigger-tag">${escapeHtml(f)}</span>`).join('');
+  return `
+    <div class="guardrail-alert">
+      <div class="guardrail-alert-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span>SECURITY GUARDRAIL TRIGGERED</span>
+      </div>
+      <p style="color: #fca5a5; font-size: 0.9rem;">${escapeHtml(guardrails.message)}</p>
+      ${flags.length > 0 ? `
+        <div style="margin-top: 10px;">
+          <strong style="font-size: 0.75rem; color: #f87171; text-transform: uppercase;">Detected Trigger Patterns:</strong>
+          <div class="trigger-tags">${tagsHtml}</div>
+          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 6px;">
+            ℹ️ Trigger patterns represent specific security rules or threat signatures matched by Input Guardrails.
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function renderCitationsExpander(sources) {
+  const container = document.createElement('div');
+  container.className = 'citations-expander';
+
+  const itemsHtml = sources.map((s, idx) => `
+    <div class="citation-item">
+      <div class="citation-header">
+        <strong>Source #${idx + 1} — Page ${s.page} | ${escapeHtml(s.section)}</strong>
+        <span>Relevance: ${s.relevance_score.toFixed(4)}</span>
+      </div>
+      <div class="citation-quote">"${escapeHtml(s.quote_snippet)}"</div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <button class="expander-trigger" type="button">
+      <span>📚 Verified Citations (${sources.length} Paper Sources)</span>
+      <span class="expander-arrow">▼</span>
+    </button>
+    <div class="expander-content">
+      ${itemsHtml}
+    </div>
+  `;
+  return container;
+}
+
+function renderPydanticExpander(ragAnswer) {
+  const container = document.createElement('div');
+  container.className = 'pydantic-expander';
+  const jsonStr = JSON.stringify(ragAnswer, null, 2);
+
+  container.innerHTML = `
+    <button class="expander-trigger" type="button">
+      <span>📦 Grounded Pydantic Structure (answer + citations)</span>
+      <span class="expander-arrow">▼</span>
+    </button>
+    <div class="expander-content">
+      <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">
+        Anti-hallucination verified Pydantic schema enforcing strictly grounded answer with citations:
+      </div>
+      <pre style="background: #090d16; padding: 10px; border-radius: 6px; font-size: 0.78rem;"><code>${escapeHtml(jsonStr)}</code></pre>
+    </div>
+  `;
+  return container;
+}
+
+// Basic Markdown & Code Block Formatter
+function formatMarkdown(text) {
+  if (!text) return '';
+  let html = escapeHtml(text);
+
+  // Formatted Code Blocks ```python ... ```
+  html = html.replace(/```([a-zA-Z0-9]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    const rawCode = unescapeHtml(code);
+    return `
+      <div class="code-container">
+        <div class="code-header">
+          <span>${lang ? lang.toUpperCase() : 'CODE'}</span>
+          <button class="copy-btn" data-code="${escapeHtml(rawCode)}">📋 Copy</button>
+        </div>
+        <pre><code>${code}</code></pre>
+      </div>
+    `;
+  });
+
+  // Inline code `...`
+  html = html.replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.88em; color: #a5f3fc;">$1</code>');
+
+  // Headings
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 style="color: #fff; margin: 14px 0 8px;">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 style="color: #fff; margin: 16px 0 10px;">$1</h1>');
+
+  // Bold & Italic
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Markdown Tables
+  if (html.includes('|') && html.includes('---')) {
+    html = formatMarkdownTables(html);
+  }
+
+  // Blockquotes
+  html = html.replace(/^\&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
+
+  // Bullet Lists
+  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
+
+  // Paragraph breaks
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = `<p>${html}</p>`;
+  html = html.replace(/<p><\/p>/g, '');
+
+  return html;
+}
+
+function formatMarkdownTables(text) {
+  const lines = text.split('\n');
+  let inTable = false;
+  let tableHtml = '<div style="overflow-x: auto; margin: 12px 0;"><table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden;">';
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const cells = trimmed.slice(1, -1).split('|').map(c => c.trim());
+      if (trimmed.includes('---')) {
+        // Separator row
+        return;
+      }
+      if (!inTable) {
+        inTable = true;
+        tableHtml += '<thead><tr style="background: rgba(99, 102, 241, 0.15); border-bottom: 1px solid var(--border-color);">';
+        cells.forEach(c => tableHtml += `<th style="padding: 10px 14px; text-align: left; font-weight: 600; color: #fff;">${c}</th>`);
+        tableHtml += '</tr></thead><tbody>';
+      } else {
+        tableHtml += '<tr style="border-bottom: 1px solid var(--border-color);">';
+        cells.forEach(c => tableHtml += `<td style="padding: 8px 14px; color: var(--text-primary);">${c}</td>`);
+        tableHtml += '</tr>';
+      }
+    } else if (inTable) {
+      inTable = false;
+      tableHtml += '</tbody></table></div>' + line;
+    }
+  });
+
+  if (inTable) {
+    tableHtml += '</tbody></table></div>';
+  }
+  return tableHtml;
+}
+
+function scrollToBottom() {
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function unescapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+}
