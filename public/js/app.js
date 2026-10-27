@@ -293,6 +293,10 @@ async function handleSendMessage(e) {
     });
 
     const data = await res.json();
+    if (!res.ok || !data || !data.response) {
+      throw new Error(data?.error || data?.details || `Server returned error (${res.status})`);
+    }
+
     const responsePayload = data.response;
 
     // Stage 3: Sub-Agent Execution

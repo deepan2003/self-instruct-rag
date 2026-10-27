@@ -32,43 +32,63 @@ function startPythonBackend() {
   });
 }
 
-// Check if Python bridge is healthy, else start it
-async function ensurePythonRunning() {
+// Check health of Python bridge
+function checkPythonHealth() {
   return new Promise((resolve) => {
     const req = http.get(`${PYTHON_URL}/api/health`, (res) => {
-      if (res.statusCode === 200) {
-        console.log('[Node.js] Python backend is already running and healthy.');
-        resolve(true);
-      } else {
-        startPythonBackend();
-        resolve(false);
-      }
+      resolve(res.statusCode === 200);
     });
-
-    req.on('error', () => {
-      startPythonBackend();
-      resolve(false);
-    });
-
-    req.setTimeout(1500, () => {
+    req.on('error', () => resolve(false));
+    req.setTimeout(800, () => {
       req.destroy();
-      startPythonBackend();
       resolve(false);
     });
   });
 }
 
+// Wait until Python bridge is healthy
+async function waitForPythonHealthy(maxAttempts = 20, intervalMs = 400) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const healthy = await checkPythonHealth();
+    if (healthy) {
+      console.log('[Node.js] Python backend bridge is initialized and ready.');
+      return true;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  console.warn('[Node.js] Python backend took longer than usual to start.');
+  return false;
+}
+
+// Check if Python bridge is healthy, else start it and wait
+async function ensurePythonRunning() {
+  const isRunning = await checkPythonHealth();
+  if (isRunning) {
+    console.log('[Node.js] Python backend is already running.');
+    return true;
+  }
+  startPythonBackend();
+  return await waitForPythonHealthy();
+}
+
 // Proxy helper
 function proxyToPython(req, res, targetPath, method = 'GET', body = null) {
+  const payloadStr = body ? JSON.stringify(body) : null;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+
+  if (payloadStr) {
+    headers['Content-Length'] = Buffer.byteLength(payloadStr, 'utf-8');
+  }
+
   const options = {
     hostname: '127.0.0.1',
     port: PYTHON_PORT,
     path: targetPath,
     method: method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
+    headers: headers
   };
 
   const pyReq = http.request(options, (pyRes) => {
@@ -86,8 +106,8 @@ function proxyToPython(req, res, targetPath, method = 'GET', body = null) {
     });
   });
 
-  if (body) {
-    pyReq.write(JSON.stringify(body));
+  if (payloadStr) {
+    pyReq.write(payloadStr);
   }
   pyReq.end();
 }
