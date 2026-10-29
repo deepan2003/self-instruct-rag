@@ -13,8 +13,10 @@ from core.tools import (
 )
 from core.conversation import ConversationHandler
 
+from core.config import get_groq_api_key, get_tavily_api_key
+
 def load_env_file():
-    """Loads environment variables from .env file into os.environ if present."""
+    """Loads environment variables from .env file into os.environ if present, or sets defaults."""
     env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
     if os.path.exists(env_path):
         try:
@@ -29,6 +31,11 @@ def load_env_file():
                             os.environ[k] = v
         except Exception:
             pass
+
+    if not os.environ.get("GROQ_API_KEY"):
+        os.environ["GROQ_API_KEY"] = get_groq_api_key()
+    if not os.environ.get("TAVILY_API_KEY"):
+        os.environ["TAVILY_API_KEY"] = get_tavily_api_key()
 
 load_env_file()
 

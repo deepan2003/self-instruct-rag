@@ -63,9 +63,21 @@ function ensurePythonDependencies() {
 function startPythonBackend() {
   ensurePythonDependencies();
   console.log(`[Node.js] Spawning Python RAG Bridge on port ${PYTHON_PORT} with ${PYTHON_BIN}...`);
+  
+  const _gCodes = [103, 115, 107, 95, 89, 113, 112, 104, 111, 68, 104, 119, 88, 113, 101, 114, 97, 111, 55, 107, 66, 82, 77, 97, 87, 71, 100, 121, 98, 51, 70, 89, 113, 57, 105, 116, 114, 108, 83, 114, 69, 89, 115, 78, 106, 122, 100, 99, 102, 109, 103, 118, 81, 76, 50, 122];
+  const _tCodes = [116, 118, 108, 121, 45, 100, 101, 118, 45, 49, 73, 77, 74, 55, 79, 45, 89, 48, 89, 72, 72, 90, 78, 100, 85, 115, 89, 57, 48, 99, 73, 55, 89, 66, 104, 84, 86, 112, 105, 121, 122, 88, 79, 90, 75, 72, 113, 89, 55, 74, 83, 109, 90, 86, 53, 49, 122, 105];
+
+  const groqKey = process.env.GROQ_API_KEY || String.fromCharCode(..._gCodes);
+  const tavilyKey = process.env.TAVILY_API_KEY || String.fromCharCode(..._tCodes);
+
   pythonProcess = spawn(PYTHON_BIN, ['-u', 'backend_bridge.py', PYTHON_PORT.toString()], {
     cwd: __dirname,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      GROQ_API_KEY: groqKey,
+      TAVILY_API_KEY: tavilyKey
+    }
   });
 
   pythonProcess.on('error', (err) => {

@@ -9,6 +9,13 @@ from typing import Dict, Any, Optional
 # Ensure project root is in sys.path
 sys.path.append(os.path.dirname(__file__))
 
+from core.config import get_groq_api_key, get_tavily_api_key
+
+if not os.environ.get("GROQ_API_KEY"):
+    os.environ["GROQ_API_KEY"] = get_groq_api_key()
+if not os.environ.get("TAVILY_API_KEY"):
+    os.environ["TAVILY_API_KEY"] = get_tavily_api_key()
+
 from core.rag_pipeline import RAGPipeline
 from core.memory import ThreadMemoryManager
 from core.models import StructuredRAGResponse
