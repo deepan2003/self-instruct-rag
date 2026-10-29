@@ -177,7 +177,7 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "Endpoint not found"})
 
 def run_server(port: int = 5000):
-    server_address = ("127.0.0.1", port)
+    server_address = ("0.0.0.0", port)
     httpd = ThreadedHTTPServer(server_address, RAGAPIHandler)
     print(f"[Backend] Python RAG Bridge HTTP Server listening on http://127.0.0.1:{port}", flush=True)
     try:

@@ -4,6 +4,7 @@
   "description": "Baasha Agent - Professional, creative and interactive AI Assistant with ReAct agent, Gmail drafting tool, live tools and isolated thread memory.",
   "main": "server.js",
   "scripts": {
+    "postinstall": "python3 -m pip install -r requirements.txt || pip3 install -r requirements.txt || pip install -r requirements.txt || true",
     "start": "node server.js",
     "dev": "node server.js",
     "test": "python -m unittest test_rag -v"

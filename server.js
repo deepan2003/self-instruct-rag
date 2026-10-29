@@ -2,12 +2,29 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const http = require('http');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
+
+function findPythonBinary() {
+  if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
+  const candidates = process.platform === 'win32'
+    ? ['python', 'py', 'python3']
+    : ['python3', 'python'];
+
+  for (const bin of candidates) {
+    try {
+      const res = spawnSync(bin, ['--version']);
+      if (res.status === 0) {
+        return bin;
+      }
+    } catch (e) {}
+  }
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PYTHON_PORT = process.env.PYTHON_PORT || 5000;
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python';
+const PYTHON_BIN = findPythonBinary();
 const PYTHON_URL = `http://127.0.0.1:${PYTHON_PORT}`;
 
 app.use(cors());
@@ -16,8 +33,34 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 let pythonProcess = null;
 
+// Ensure Python dependencies are installed before spawning
+function ensurePythonDependencies() {
+  console.log(`[Node.js] Using Python binary: ${PYTHON_BIN}`);
+  try {
+    const check = spawnSync(PYTHON_BIN, ['-c', 'import pydantic, requests']);
+    if (check.status !== 0) {
+      console.log(`[Node.js] Python dependencies missing. Installing requirements via ${PYTHON_BIN}...`);
+      const pipRes = spawnSync(PYTHON_BIN, ['-m', 'pip', 'install', '--break-system-packages', '-r', 'requirements.txt'], {
+        cwd: __dirname,
+        stdio: 'inherit'
+      });
+      if (pipRes.status !== 0) {
+        spawnSync(PYTHON_BIN, ['-m', 'pip', 'install', '-r', 'requirements.txt'], {
+          cwd: __dirname,
+          stdio: 'inherit'
+        });
+      }
+    } else {
+      console.log('[Node.js] Python requirements verified (pydantic & requests ready).');
+    }
+  } catch (err) {
+    console.warn('[Node.js] Python dependency check warning:', err.message);
+  }
+}
+
 // Function to start Python backend bridge if not running
 function startPythonBackend() {
+  ensurePythonDependencies();
   console.log(`[Node.js] Spawning Python RAG Bridge on port ${PYTHON_PORT} with ${PYTHON_BIN}...`);
   pythonProcess = spawn(PYTHON_BIN, ['-u', 'backend_bridge.py', PYTHON_PORT.toString()], {
     cwd: __dirname,
@@ -26,10 +69,12 @@ function startPythonBackend() {
 
   pythonProcess.on('error', (err) => {
     console.error('[Node.js] Failed to spawn Python process:', err.message);
+    pythonProcess = null;
   });
 
   pythonProcess.on('exit', (code, signal) => {
     console.log(`[Node.js] Python process exited with code ${code}, signal ${signal}`);
+    pythonProcess = null;
   });
 }
 
@@ -48,7 +93,7 @@ function checkPythonHealth() {
 }
 
 // Wait until Python bridge is healthy
-async function waitForPythonHealthy(maxAttempts = 20, intervalMs = 400) {
+async function waitForPythonHealthy(maxAttempts = 30, intervalMs = 400) {
   for (let i = 0; i < maxAttempts; i++) {
     const healthy = await checkPythonHealth();
     if (healthy) {
@@ -101,6 +146,10 @@ function proxyToPython(req, res, targetPath, method = 'GET', body = null) {
   });
 
   pyReq.on('error', (err) => {
+    if (!pythonProcess) {
+      console.log('[Node.js] Python process inactive. Triggering auto-restart...');
+      startPythonBackend();
+    }
     res.status(503).json({
       error: 'Python backend bridge is unavailable or starting up.',
       details: err.message
