@@ -7,6 +7,7 @@ const { spawn } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PYTHON_PORT = process.env.PYTHON_PORT || 5000;
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python';
 const PYTHON_URL = `http://127.0.0.1:${PYTHON_PORT}`;
 
 app.use(cors());
@@ -17,8 +18,8 @@ let pythonProcess = null;
 
 // Function to start Python backend bridge if not running
 function startPythonBackend() {
-  console.log(`[Node.js] Spawning Python RAG Bridge on port ${PYTHON_PORT}...`);
-  pythonProcess = spawn('python', ['-u', 'backend_bridge.py', PYTHON_PORT.toString()], {
+  console.log(`[Node.js] Spawning Python RAG Bridge on port ${PYTHON_PORT} with ${PYTHON_BIN}...`);
+  pythonProcess = spawn(PYTHON_BIN, ['-u', 'backend_bridge.py', PYTHON_PORT.toString()], {
     cwd: __dirname,
     stdio: 'inherit'
   });
@@ -157,11 +158,11 @@ process.on('SIGTERM', () => {
 
 // Start Express Server
 ensurePythonRunning().then(() => {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n=======================================================`);
     console.log(`⚡ BAASHA AGENT - ReAct Intelligence Engine running!`);
-    console.log(`👉 OPEN THIS IN YOUR BROWSER: http://localhost:${PORT}`);
-    console.log(`👉 OR: http://127.0.0.1:${PORT}`);
+    console.log(`👉 BINDING ON: http://0.0.0.0:${PORT}`);
+    console.log(`👉 LOCAL URL: http://localhost:${PORT}`);
     console.log(`⚠️  NOTE: Port ${PYTHON_PORT} is the internal Python API bridge.`);
     console.log(`   Always use port ${PORT} for the Baasha Agent UI.`);
     console.log(`=======================================================\n`);

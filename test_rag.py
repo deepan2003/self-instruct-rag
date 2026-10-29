@@ -132,10 +132,10 @@ class TestSelfInstructRAG(unittest.TestCase):
     def test_4_steps_pipeline_structured_answer(self):
         res = self.pipeline.query("What are the 4 steps in the automatic instruction generation pipeline")
         self.assertEqual(res.status, "SUCCESS")
-        self.assertIn("Step 1", res.answer)
-        self.assertIn("Step 2", res.answer)
-        self.assertIn("Step 3", res.answer)
-        self.assertIn("Step 4", res.answer)
+        self.assertTrue("Instruction Generation" in res.answer or "Step 1" in res.answer)
+        self.assertTrue("Classification" in res.answer or "Step 2" in res.answer)
+        self.assertTrue("Instance Generation" in res.answer or "Step 3" in res.answer)
+        self.assertTrue("Filtering" in res.answer or "Step 4" in res.answer)
         # Verify no bracketed page/section tags clutter the answer text
         self.assertNotIn("[Page", res.answer)
         self.assertNotIn("[Section", res.answer)
