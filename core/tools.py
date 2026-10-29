@@ -537,13 +537,287 @@ class GmailDraftTool:
         )
 
 
+class ImageAnalysisTool:
+    """
+    Multimodal Vision Intelligence Engine.
+    Uses Groq's high-performance vision model (qwen/qwen3.8-27b)
+    to perform visual comprehension, object detection, diagram parsing, and OCR.
+    """
+    VISION_MODEL = "qwen/qwen3.8-27b"
+    GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+    @classmethod
+    def is_image_file(cls, filename: str = "", mime_type: str = "") -> bool:
+        fn_lower = filename.lower()
+        mime_lower = mime_type.lower()
+        return (
+            mime_lower.startswith("image/")
+            or any(fn_lower.endswith(ext) for ext in [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"])
+        )
+
+    @classmethod
+    def analyze(cls, query: str, file_data: Dict[str, Any], api_key: Optional[str] = None) -> Dict[str, Any]:
+        key = api_key or os.getenv("GROQ_API_KEY")
+        if not key:
+            load_env_file()
+            key = os.getenv("GROQ_API_KEY")
+
+        filename = file_data.get("name", "uploaded_image.png")
+        raw_data = file_data.get("data", "")
+        mime_type = file_data.get("type", "image/png")
+
+        # Format proper data URL
+        if raw_data.startswith("data:"):
+            data_url = raw_data
+        else:
+            data_url = f"data:{mime_type};base64,{raw_data}"
+
+        clean_query = query.strip() if query else "Please analyze this image in detail, describing all objects, text, charts, diagrams, and key visual elements."
+
+        payload = {
+            "model": cls.VISION_MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are Baasha Agent's Visual Intelligence Engine. "
+                        "The user has uploaded an image. Provide a detailed, accurate, and structured answer. "
+                        "Identify any text (OCR), charts, diagrams, objects, colors, layouts, or data present. "
+                        "If the user asks a specific question about the image, answer it directly and thoroughly."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": clean_query},
+                        {"type": "image_url", "image_url": {"url": data_url}}
+                    ]
+                }
+            ],
+            "temperature": 0.15
+        }
+
+        try:
+            resp = requests.post(
+                cls.GROQ_API_URL,
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=30
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                content = data["choices"][0]["message"]["content"].strip()
+                return {
+                    "success": True,
+                    "filename": filename,
+                    "answer": content,
+                    "summary": f"Analyzed visual elements, objects, and text in {filename}.",
+                    "model": cls.VISION_MODEL
+                }
+            else:
+                return {
+                    "success": False,
+                    "filename": filename,
+                    "answer": f"⚠️ Vision model returned status {resp.status_code}: {resp.text}",
+                    "summary": "Vision API call failed."
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "filename": filename,
+                "answer": f"⚠️ Could not process image: {str(e)}",
+                "summary": "Image processing error."
+            }
+
+    @classmethod
+    def format_markdown(cls, res: Dict[str, Any]) -> str:
+        filename = res.get("filename", "uploaded_image")
+        answer = res.get("answer", "")
+        return (
+            f"### 🖼️ Image Vision Analysis: *\"{filename}\"*\n\n"
+            f"{answer}"
+        )
+
+
+class DocumentAnalysisTool:
+    """
+    Document Intelligence Engine.
+    Extracts text from PDF, DOCX, TXT, MD, CSV, JSON, and code files,
+    then uses Baasha Agent LLM to summarize, answer questions, and extract insights.
+    """
+    GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+    DEFAULT_MODEL = "openai/gpt-oss-120b"
+    FALLBACK_MODEL = "qwen/qwen3.8-27b"
+
+    @classmethod
+    def extract_text(cls, file_data: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        filename = file_data.get("name", "document.txt")
+        raw_data = file_data.get("data", "")
+        mime_type = file_data.get("type", "").lower()
+        ext = os.path.splitext(filename)[1].lower()
+
+        # Strip base64 header if present
+        b64_content = raw_data
+        if "," in raw_data and raw_data.startswith("data:"):
+            b64_content = raw_data.split(",", 1)[1]
+
+        try:
+            import base64
+            file_bytes = base64.b64decode(b64_content)
+        except Exception:
+            file_bytes = raw_data.encode("utf-8")
+
+        extracted_text = ""
+        meta = {"pages": 1, "format": ext or mime_type, "chars": 0}
+
+        # 1. PDF extraction via pypdf
+        if ext == ".pdf" or "pdf" in mime_type:
+            try:
+                import pypdf
+                import io
+                reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+                meta["pages"] = len(reader.pages)
+                pages_text = []
+                for p_idx, page in enumerate(reader.pages):
+                    t = page.extract_text() or ""
+                    if t.strip():
+                        pages_text.append(f"[Page {p_idx + 1}]\n{t.strip()}")
+                extracted_text = "\n\n".join(pages_text)
+            except Exception as e:
+                extracted_text = f"Error reading PDF: {str(e)}"
+
+        # 2. DOCX extraction via zipfile
+        elif ext in [".docx", ".doc"] or "word" in mime_type:
+            try:
+                import zipfile
+                import io
+                with zipfile.ZipFile(io.BytesIO(file_bytes), "r") as zf:
+                    xml_content = zf.read("word/document.xml").decode("utf-8", errors="ignore")
+                    matches = re.findall(r'<w:t[^>]*>(.*?)</w:t>', xml_content)
+                    extracted_text = " ".join(matches)
+            except Exception as e:
+                extracted_text = f"Error reading DOCX: {str(e)}"
+
+        # 3. Plain text / MD / CSV / JSON / Code
+        else:
+            try:
+                extracted_text = file_bytes.decode("utf-8")
+            except UnicodeDecodeError:
+                extracted_text = file_bytes.decode("latin-1", errors="ignore")
+
+        meta["chars"] = len(extracted_text)
+        return extracted_text.strip(), meta
+
+    @classmethod
+    def analyze(cls, query: str, file_data: Dict[str, Any], api_key: Optional[str] = None) -> Dict[str, Any]:
+        key = api_key or os.getenv("GROQ_API_KEY")
+        if not key:
+            load_env_file()
+            key = os.getenv("GROQ_API_KEY")
+
+        filename = file_data.get("name", "document")
+        doc_text, meta = cls.extract_text(file_data)
+
+        if not doc_text:
+            return {
+                "success": False,
+                "filename": filename,
+                "meta": meta,
+                "answer": f"⚠️ Could not extract readable text from '{filename}'. The file might be empty or encrypted.",
+                "summary": "Document text extraction returned empty."
+            }
+
+        # Truncate to safe token limit (approx 35,000 characters)
+        truncated_doc = doc_text[:35000]
+        was_truncated = len(doc_text) > 35000
+
+        user_q = query.strip() if query else "Please provide a comprehensive summary and key takeaways of this document."
+
+        system_prompt = (
+            "You are Baasha Agent's Document Intelligence Engine. "
+            "Analyze the uploaded document thoroughly. Answer the user's question, summarize the document, "
+            "or extract requested information strictly based on the document content. "
+            "Structure your response with clear headings, bullet points, and key takeaways."
+        )
+
+        user_content = (
+            f"=== UPLOADED DOCUMENT: {filename} ({meta.get('pages', 1)} pages, {meta.get('chars', len(doc_text))} characters) ===\n\n"
+            f"{truncated_doc}\n\n"
+            f"{'*(Note: Document was truncated to 35,000 characters for optimal processing)*' if was_truncated else ''}\n\n"
+            f"=== USER QUESTION / INSTRUCTION ===\n"
+            f"{user_q}\n\n"
+            f"Answer:"
+        )
+
+        model_to_use = cls.DEFAULT_MODEL
+        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+        payload = {
+            "model": model_to_use,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content}
+            ],
+            "temperature": 0.1
+        }
+
+        try:
+            resp = requests.post(cls.GROQ_API_URL, headers=headers, json=payload, timeout=30)
+            if resp.status_code != 200:
+                # Try fallback model
+                payload["model"] = cls.FALLBACK_MODEL
+                resp = requests.post(cls.GROQ_API_URL, headers=headers, json=payload, timeout=30)
+
+            if resp.status_code == 200:
+                data = resp.json()
+                answer = data["choices"][0]["message"]["content"].strip()
+                return {
+                    "success": True,
+                    "filename": filename,
+                    "meta": meta,
+                    "answer": answer,
+                    "summary": f"Analyzed document {filename} ({meta.get('pages', 1)} pages, {meta.get('chars', 0)} characters)."
+                }
+            else:
+                return {
+                    "success": False,
+                    "filename": filename,
+                    "meta": meta,
+                    "answer": f"⚠️ Document analysis API returned error {resp.status_code}: {resp.text}",
+                    "summary": "Document LLM analysis failed."
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "filename": filename,
+                "meta": meta,
+                "answer": f"⚠️ Document analysis error: {str(e)}",
+                "summary": "Document processing exception."
+            }
+
+    @classmethod
+    def format_markdown(cls, res: Dict[str, Any]) -> str:
+        filename = res.get("filename", "Document")
+        meta = res.get("meta", {})
+        pages = meta.get("pages", 1)
+        chars = meta.get("chars", 0)
+        answer = res.get("answer", "")
+
+        return (
+            f"### 📄 Document Intelligence Analysis: *\"{filename}\"*\n"
+            f"> 📊 **Document Details:** `{filename}` • `{pages} page(s)` • `{chars:,} characters`\n\n"
+            f"{answer}"
+        )
+
+
 class ToolRouter:
     """
     Detects whether a user prompt intends to trigger:
-    1) Live Weather (Tamil Nadu)
-    2) Python Code Execution
-    3) Tavily Live Web & News Search
-    4) Gmail Draft Preparation
+    1) Uploaded Image Analysis
+    2) Uploaded Document Analysis
+    3) Live Weather (Tamil Nadu)
+    4) Python Code Execution
+    5) Tavily Live Web & News Search
+    6) Gmail Draft Preparation
     """
     WEATHER_REGEX = re.compile(
         r"\b(weather|temperature|climate|rainfall|rain|forecast|sunny|humidity|is\s+it\s+hot|is\s+it\s+raining)\b",
@@ -568,7 +842,15 @@ class ToolRouter:
     )
 
     @classmethod
-    def identify_tool(cls, query: str) -> Optional[str]:
+    def identify_tool(cls, query: str, file_data: Optional[Dict[str, Any]] = None) -> Optional[str]:
+        # Priority 0: Uploaded File (Image vs Document)
+        if file_data and file_data.get("data"):
+            fn = file_data.get("name", "")
+            mime = file_data.get("type", "")
+            if ImageAnalysisTool.is_image_file(fn, mime):
+                return "image_analysis"
+            return "document_analysis"
+
         q = query.strip()
 
         # 1. Code execution takes priority if explicit code blocks or run prefixes exist

@@ -9,7 +9,8 @@ const state = {
   currentThread: localStorage.getItem('current_thread') || null,
   topK: 4,
   threshold: 0.10,
-  isProcessing: false
+  isProcessing: false,
+  attachment: null // { name, type, size, data }
 };
 
 // DOM Elements
@@ -33,6 +34,16 @@ const welcomeHero = document.getElementById('welcomeHero');
 const chatForm = document.getElementById('chatForm');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
+
+// File Upload Elements
+const attachFileBtn = document.getElementById('attachFileBtn');
+const fileUploadInput = document.getElementById('fileUploadInput');
+const filePreviewContainer = document.getElementById('filePreviewContainer');
+const filePreviewIcon = document.getElementById('filePreviewIcon');
+const imagePreviewThumb = document.getElementById('imagePreviewThumb');
+const filePreviewName = document.getElementById('filePreviewName');
+const filePreviewSize = document.getElementById('filePreviewSize');
+const removeFileBtn = document.getElementById('removeFileBtn');
 
 const reasoningBoxWrapper = document.getElementById('reasoningBoxWrapper');
 const stepGuardrails = document.getElementById('stepGuardrails');
@@ -119,6 +130,88 @@ function setupEventListeners() {
 
   // Form Submit
   chatForm.addEventListener('submit', handleSendMessage);
+
+  // Attachment Button & Input
+  attachFileBtn?.addEventListener('click', () => {
+    fileUploadInput.click();
+  });
+
+  fileUploadInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Enforce 25 MB limit
+    if (file.size > 25 * 1024 * 1024) {
+      alert('File size exceeds the 25 MB limit.');
+      fileUploadInput.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      const dataUrl = loadEvt.target.result;
+      state.attachment = {
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: dataUrl
+      };
+
+      // Populate file preview container
+      filePreviewName.textContent = file.name;
+      filePreviewSize.textContent = formatBytes(file.size);
+
+      if (file.type.startsWith('image/')) {
+        imagePreviewThumb.src = dataUrl;
+        imagePreviewThumb.style.display = 'block';
+        filePreviewIcon.style.display = 'none';
+        chatInput.placeholder = `Ask a question about ${file.name}, or press Enter...`;
+      } else {
+        imagePreviewThumb.style.display = 'none';
+        filePreviewIcon.style.display = 'block';
+        filePreviewIcon.textContent = getFileIcon(file.name);
+        chatInput.placeholder = `Summarize or ask questions about ${file.name}, or press Enter...`;
+      }
+
+      filePreviewContainer.style.display = 'block';
+      attachFileBtn.classList.add('has-file');
+      chatInput.focus();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  removeFileBtn?.addEventListener('click', () => {
+    clearAttachment();
+  });
+}
+
+function clearAttachment() {
+  state.attachment = null;
+  if (fileUploadInput) fileUploadInput.value = '';
+  if (filePreviewContainer) filePreviewContainer.style.display = 'none';
+  if (imagePreviewThumb) {
+    imagePreviewThumb.src = '';
+    imagePreviewThumb.style.display = 'none';
+  }
+  if (attachFileBtn) attachFileBtn.classList.remove('has-file');
+  chatInput.placeholder = "Draft an email, check weather, run code, or ask questions about an attached doc/image...";
+}
+
+function getFileIcon(filename) {
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📕';
+  if (['doc', 'docx'].includes(ext)) return '📘';
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
+  if (['py', 'js', 'json', 'html', 'css'].includes(ext)) return '💻';
+  return '📄';
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 // ==============================================================================
@@ -188,19 +281,32 @@ async function clearCurrentThread() {
 // ==============================================================================
 async function handleSendMessage(e) {
   e.preventDefault();
-  const prompt = chatInput.value.trim();
-  if (!prompt || state.isProcessing) return;
+  let prompt = chatInput.value.trim();
+  const currentAttachment = state.attachment;
+
+  if (!prompt && !currentAttachment) return;
+  if (state.isProcessing) return;
 
   state.isProcessing = true;
   sendBtn.disabled = true;
   chatInput.value = '';
   chatInput.style.height = 'auto';
 
+  // If prompt is empty but attachment is attached, provide intuitive default query
+  if (!prompt && currentAttachment) {
+    prompt = currentAttachment.type.startsWith('image/')
+      ? "What is there in this image? Please describe and analyze."
+      : "Please summarize this document and list key takeaways.";
+  }
+
+  // Clear file attachment preview from input deck
+  clearAttachment();
+
   // Hide welcome hero
   if (welcomeHero) welcomeHero.style.display = 'none';
 
-  // Render User Message
-  appendMessage('user', prompt);
+  // Render User Message with attachment preview
+  appendMessage('user', prompt, null, currentAttachment);
 
   // Show Animated Live Reasoning Status Card
   showReasoningCard();
@@ -208,11 +314,16 @@ async function handleSendMessage(e) {
   try {
     // Stage 1: Guardrail Inspection
     updateReasoningStep('stepGuardrails', 'active', 'Inspecting security rules...');
-    await delay(250);
+    await delay(200);
     updateReasoningStep('stepGuardrails', 'done', '✅ Safe & Authorized');
 
-    // Stage 2: Main Agent Reasoning
-    updateReasoningStep('stepAgent', 'active', '120B Brain reasoning & selecting tool...');
+    // Stage 2: Main Agent Reasoning & Tool Selection
+    if (currentAttachment) {
+      const isImg = currentAttachment.type.startsWith('image/');
+      updateReasoningStep('stepAgent', 'active', isImg ? 'Multimodal Vision Engine analyzing visual features...' : 'Document Engine extracting text and tables...');
+    } else {
+      updateReasoningStep('stepAgent', 'active', '120B Brain reasoning & selecting tool...');
+    }
 
     const res = await fetch(`${API_BASE}/api/query`, {
       method: 'POST',
@@ -221,7 +332,8 @@ async function handleSendMessage(e) {
         query: prompt,
         thread_id: state.currentThread,
         top_k: state.topK,
-        threshold: state.threshold
+        threshold: state.threshold,
+        file_data: currentAttachment
       })
     });
 
@@ -238,11 +350,11 @@ async function handleSendMessage(e) {
     await delay(200);
     updateReasoningStep('stepExecution', 'done', `✅ Completed: ${responsePayload.summary || 'Done'}`);
 
-    // Stage 4: Grounding & Pydantic
-    updateReasoningStep('stepGrounding', 'active', 'Verifying anti-hallucination citations...');
+    // Stage 4: Grounding & Structure Verification
+    updateReasoningStep('stepGrounding', 'active', 'Verifying response structure & anti-hallucination...');
     await delay(200);
-    updateReasoningStep('stepGrounding', 'done', '✅ Grounding Verified');
-    await delay(250);
+    updateReasoningStep('stepGrounding', 'done', '✅ Verified');
+    await delay(200);
 
     // Hide reasoning card & render assistant output
     hideReasoningCard();
@@ -298,7 +410,7 @@ function delay(ms) {
 // ==============================================================================
 // MESSAGE RENDERING & FORMATTING
 // ==============================================================================
-function appendMessage(role, content, responseObj = null) {
+function appendMessage(role, content, responseObj = null, attachment = null) {
   const row = document.createElement('div');
   row.className = `message-row ${role}`;
 
@@ -308,6 +420,31 @@ function appendMessage(role, content, responseObj = null) {
 
   const contentBox = document.createElement('div');
   contentBox.className = 'message-content';
+
+  // Render attachment if provided (e.g. user uploaded image or document)
+  if (role === 'user' && attachment && attachment.data) {
+    const attachWrapper = document.createElement('div');
+    attachWrapper.className = 'message-attachment';
+    if (attachment.type && attachment.type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = attachment.data;
+      img.alt = attachment.name || 'Uploaded Image';
+      img.className = 'chat-attachment-img';
+      attachWrapper.appendChild(img);
+    } else {
+      const docBadge = document.createElement('div');
+      docBadge.className = 'chat-attachment-doc';
+      docBadge.innerHTML = `
+        <span class="doc-icon">${getFileIcon(attachment.name || '')}</span>
+        <div class="doc-info">
+          <strong>${escapeHtml(attachment.name || 'Document')}</strong>
+          <span>${formatBytes(attachment.size || 0)}</span>
+        </div>
+      `;
+      attachWrapper.appendChild(docBadge);
+    }
+    contentBox.appendChild(attachWrapper);
+  }
 
   // Check if Guardrail violation
   const isGuardrailBlocked = responseObj && responseObj.guardrails && !responseObj.guardrails.is_safe;

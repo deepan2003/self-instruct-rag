@@ -28,7 +28,8 @@ const PYTHON_BIN = findPythonBinary();
 const PYTHON_URL = `http://127.0.0.1:${PYTHON_PORT}`;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 let pythonProcess = null;
@@ -37,7 +38,7 @@ let pythonProcess = null;
 function ensurePythonDependencies() {
   console.log(`[Node.js] Using Python binary: ${PYTHON_BIN}`);
   try {
-    const check = spawnSync(PYTHON_BIN, ['-c', 'import pydantic, requests, numpy, sklearn']);
+    const check = spawnSync(PYTHON_BIN, ['-c', 'import pydantic, requests, numpy, sklearn, pypdf, PIL']);
     if (check.status !== 0) {
       console.log(`[Node.js] Python dependencies missing. Installing requirements via ${PYTHON_BIN}...`);
       const pipRes = spawnSync(PYTHON_BIN, ['-m', 'pip', 'install', '--break-system-packages', '-r', 'requirements.txt'], {

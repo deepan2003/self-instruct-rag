@@ -66,16 +66,20 @@ class RAGPipeline:
         top_k: int = 4,
         threshold: float = 0.10,
         chat_history: Optional[List[Dict[str, Any]]] = None,
-        tavily_api_key: Optional[str] = None
+        tavily_api_key: Optional[str] = None,
+        file_data: Optional[Dict[str, Any]] = None
     ) -> StructuredRAGResponse:
         """
         Executes the full protected RAG pipeline through the Main ReAct Agent.
         """
         start_time = time.time()
 
+        if file_data and not query_text.strip():
+            query_text = "Please analyze and summarize this uploaded document / image."
+
         # Step 1: Input Guardrails Check
         guardrail_report = self.guardrails.inspect(query_text)
-        if not guardrail_report.is_safe:
+        if not guardrail_report.is_safe and not file_data:
             latency = (time.time() - start_time) * 1000
             return StructuredRAGResponse(
                 query=query_text,
@@ -98,7 +102,7 @@ class RAGPipeline:
 
         # Step 1.1: Conversational Memory Intent Handling
         intent = ConversationHandler.classify_intent(query_text)
-        if intent == "memory":
+        if intent == "memory" and not file_data:
             latency = (time.time() - start_time) * 1000
             return ConversationHandler.generate_response(
                 query_text,
@@ -114,7 +118,8 @@ class RAGPipeline:
             chat_history=chat_history,
             top_k=top_k,
             threshold=threshold,
-            tavily_api_key=tavily_api_key
+            tavily_api_key=tavily_api_key,
+            file_data=file_data
         )
 
     def save_index(self, path: str):

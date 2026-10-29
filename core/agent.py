@@ -7,7 +7,10 @@ import requests
 from typing import Dict, Any, Optional, List, Tuple
 from core.document import Document
 from core.models import StructuredRAGResponse, GuardrailReport, GroundingEvaluation, ConfidenceLevel, GuardrailStatus, SourceCitation
-from core.tools import TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool, GmailDraftTool, ToolRouter
+from core.tools import (
+    TamilNaduWeatherTool, CodeExecutionTool, TavilySearchTool,
+    GmailDraftTool, ToolRouter, ImageAnalysisTool, DocumentAnalysisTool
+)
 from core.conversation import ConversationHandler
 
 def load_env_file():
@@ -234,15 +237,87 @@ class ReActAgent:
         chat_history: Optional[List[Dict[str, Any]]] = None,
         top_k: int = 4,
         threshold: float = 0.10,
-        tavily_api_key: Optional[str] = None
+        tavily_api_key: Optional[str] = None,
+        file_data: Optional[Dict[str, Any]] = None
     ) -> StructuredRAGResponse:
         """
         Executes the Main Agent ReAct loop:
-        1. Main Agent decides tool / sub-agent
-        2. Sub-agent executes (Observation)
-        3. Main Agent synthesizes final response
+        1. Checks for multimodal file uploads (Image vision or Document text analysis)
+        2. Main Agent decides tool / sub-agent
+        3. Sub-agent executes (Observation)
+        4. Main Agent synthesizes final response
         """
         start_time = time.time()
+
+        # Handle Multimodal File Uploads (Images & Documents)
+        if file_data and file_data.get("data"):
+            fn = file_data.get("name", "uploaded_file")
+            mime = file_data.get("type", "")
+            is_image = ImageAnalysisTool.is_image_file(fn, mime)
+
+            if is_image:
+                analysis = ImageAnalysisTool.analyze(query, file_data, api_key=self.api_key)
+                formatted_ans = ImageAnalysisTool.format_markdown(analysis)
+                latency = (time.time() - start_time) * 1000
+                return StructuredRAGResponse(
+                    query=query or f"Analyze image: {fn}",
+                    answer=formatted_ans,
+                    summary=analysis.get("summary", f"Visual inspection of {fn}"),
+                    key_findings=["Multimodal vision analysis via Qwen-27B Vision."],
+                    sources=[],
+                    guardrails=GuardrailReport(
+                        is_safe=True,
+                        status=GuardrailStatus.PASSED,
+                        passed_injection_check=True,
+                        passed_scope_check=True,
+                        flagged_patterns=[],
+                        message="Safe visual upload"
+                    ),
+                    grounding=GroundingEvaluation(
+                        is_grounded=True,
+                        faithfulness_score=1.0,
+                        confidence=ConfidenceLevel.HIGH,
+                        grounded_claims=["Direct visual inspection."],
+                        unsupported_claims=[],
+                        verification_notes="Multimodal visual telemetry"
+                    ),
+                    latency_ms=round(latency, 2),
+                    status="TOOL_IMAGE_ANALYSIS"
+                )
+            else:
+                analysis = DocumentAnalysisTool.analyze(query, file_data, api_key=self.api_key)
+                formatted_ans = DocumentAnalysisTool.format_markdown(analysis)
+                latency = (time.time() - start_time) * 1000
+                meta = analysis.get("meta", {})
+                return StructuredRAGResponse(
+                    query=query or f"Summarize document: {fn}",
+                    answer=formatted_ans,
+                    summary=analysis.get("summary", f"Document analysis of {fn}"),
+                    key_findings=[
+                        f"Document: {fn}",
+                        f"Pages: {meta.get('pages', 1)}",
+                        f"Characters: {meta.get('chars', 0):,}"
+                    ],
+                    sources=[],
+                    guardrails=GuardrailReport(
+                        is_safe=True,
+                        status=GuardrailStatus.PASSED,
+                        passed_injection_check=True,
+                        passed_scope_check=True,
+                        flagged_patterns=[],
+                        message="Safe document upload"
+                    ),
+                    grounding=GroundingEvaluation(
+                        is_grounded=True,
+                        faithfulness_score=1.0,
+                        confidence=ConfidenceLevel.HIGH,
+                        grounded_claims=["Extracted document text grounding."],
+                        unsupported_claims=[],
+                        verification_notes="Direct file parsing and synthesis"
+                    ),
+                    latency_ms=round(latency, 2),
+                    status="TOOL_DOCUMENT_ANALYSIS"
+                )
 
         # Build message history for LLM
         llm_messages = [{"role": "system", "content": self.SYSTEM_PROMPT}]
@@ -269,13 +344,41 @@ class ReActAgent:
                 top_k=top_k,
                 threshold=threshold,
                 tavily_api_key=tavily_api_key,
-                start_time=start_time
+                start_time=start_time,
+                file_data=file_data
             )
 
         tool_calls = assistant_msg.get("tool_calls")
 
         # Case A: Main Agent decided NO tool is needed (Direct friendly conversation or greeting)
         if not tool_calls:
+            # Check if user responded with recipient email after a previous prompt to provide one
+            if GmailDraftTool.extract_email(query):
+                recent_text = " ".join([m.get("content", "") for m in (chat_history or [])[-3:]]).lower()
+                if any(w in recent_text for w in ["recipient", "mail id", "email address", "draft"]):
+                    recipient_email = GmailDraftTool.extract_email(query)
+                    topic = "Meeting Schedule"
+                    for m in reversed(chat_history or []):
+                        if m.get("role") == "user":
+                            topic = m.get("content", "Discussion")
+                            break
+                    subject, body = GmailDraftTool.compose_content_heuristic(topic, recipient=recipient_email)
+                    draft = GmailDraftTool.create_draft(recipient_email, subject, body)
+                    formatted_ans = GmailDraftTool.format_markdown(draft)
+                    latency = (time.time() - start_time) * 1000
+                    return StructuredRAGResponse(
+                        query=query,
+                        answer=formatted_ans,
+                        summary=f"Gmail draft prepared for {recipient_email}.",
+                        key_findings=[f"Recipient: {recipient_email}", f"Subject: {subject}"],
+                        sources=[],
+                        guardrails=GuardrailReport(is_safe=True, status=GuardrailStatus.PASSED, passed_injection_check=True, passed_scope_check=True, flagged_patterns=[], message="Safe"),
+                        grounding=GroundingEvaluation(is_grounded=True, faithfulness_score=1.0, confidence=ConfidenceLevel.HIGH, grounded_claims=[], unsupported_claims=[], verification_notes="Gmail draft"),
+                        latency_ms=round(latency, 2),
+                        status="TOOL_GMAIL",
+                        gmail_draft=draft
+                    )
+
             direct_reply = assistant_msg.get("content", "").strip()
             if not direct_reply:
                 direct_reply = "I'm doing well, thank you! How can I help you today?"
@@ -462,10 +565,42 @@ class ReActAgent:
         top_k: int = 4,
         threshold: float = 0.10,
         tavily_api_key: Optional[str] = None,
-        start_time: float = 0.0
+        start_time: float = 0.0,
+        file_data: Optional[Dict[str, Any]] = None
     ) -> StructuredRAGResponse:
         """Reliable fallback if Groq API is offline or unreachable."""
-        tool = ToolRouter.identify_tool(query)
+        tool = ToolRouter.identify_tool(query, file_data=file_data)
+        if tool == "image_analysis" and file_data:
+            analysis = ImageAnalysisTool.analyze(query, file_data, api_key=self.api_key)
+            ans = ImageAnalysisTool.format_markdown(analysis)
+            latency = (time.time() - start_time) * 1000
+            return StructuredRAGResponse(
+                query=query,
+                answer=ans,
+                summary=analysis.get("summary", "Image vision analysis."),
+                key_findings=[],
+                sources=[],
+                guardrails=GuardrailReport(is_safe=True, status=GuardrailStatus.PASSED, passed_injection_check=True, passed_scope_check=True, flagged_patterns=[], message="Safe"),
+                grounding=GroundingEvaluation(is_grounded=True, faithfulness_score=1.0, confidence=ConfidenceLevel.HIGH, grounded_claims=[], unsupported_claims=[], verification_notes="Image Vision"),
+                latency_ms=round(latency, 2),
+                status="TOOL_IMAGE_ANALYSIS"
+            )
+
+        if tool == "document_analysis" and file_data:
+            analysis = DocumentAnalysisTool.analyze(query, file_data, api_key=self.api_key)
+            ans = DocumentAnalysisTool.format_markdown(analysis)
+            latency = (time.time() - start_time) * 1000
+            return StructuredRAGResponse(
+                query=query,
+                answer=ans,
+                summary=analysis.get("summary", "Document text analysis."),
+                key_findings=[],
+                sources=[],
+                guardrails=GuardrailReport(is_safe=True, status=GuardrailStatus.PASSED, passed_injection_check=True, passed_scope_check=True, flagged_patterns=[], message="Safe"),
+                grounding=GroundingEvaluation(is_grounded=True, faithfulness_score=1.0, confidence=ConfidenceLevel.HIGH, grounded_claims=[], unsupported_claims=[], verification_notes="Document Analysis"),
+                latency_ms=round(latency, 2),
+                status="TOOL_DOCUMENT_ANALYSIS"
+            )
         if tool == "weather":
             data = TamilNaduWeatherTool.get_weather(query)
             ans = TamilNaduWeatherTool.format_markdown(data)

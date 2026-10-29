@@ -122,13 +122,17 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
             thread_id = req_data.get("thread_id", "default").strip()
             top_k = int(req_data.get("top_k", 4))
             threshold = float(req_data.get("threshold", 0.10))
+            file_data = req_data.get("file_data")
 
-            if not query_text:
-                self._send_json(400, {"error": "Query cannot be empty"})
+            if not query_text and not file_data:
+                self._send_json(400, {"error": "Query or uploaded file cannot be empty"})
                 return
 
             # Append user message to thread memory
-            memory_mgr.add_message(thread_id, role="user", content=query_text)
+            stored_msg = query_text
+            if file_data and not stored_msg:
+                stored_msg = f"Uploaded {file_data.get('name', 'file')}"
+            memory_mgr.add_message(thread_id, role="user", content=stored_msg)
             current_history = memory_mgr.get_thread_history(thread_id)
 
             # Query the RAG Pipeline through ReAct Agent
@@ -136,7 +140,8 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
                 query_text,
                 top_k=top_k,
                 threshold=threshold,
-                chat_history=current_history
+                chat_history=current_history,
+                file_data=file_data
             )
 
             # Append assistant response to thread memory
