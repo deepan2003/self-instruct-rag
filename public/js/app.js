@@ -70,9 +70,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Setup All UI Event Handlers
 function setupEventListeners() {
-  // Mobile / Toggle Sidebar
-  sidebarToggle?.addEventListener('click', () => sidebar.classList.toggle('open'));
-  mobileMenuBtn?.addEventListener('click', () => sidebar.classList.toggle('open'));
+  // Mobile / Toggle Sidebar with Backdrop
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    sidebarBackdrop?.classList.add('active');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    sidebarBackdrop?.classList.remove('active');
+  }
+
+  sidebarToggle?.addEventListener('click', () => {
+    if (sidebar.classList.contains('open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+
+  mobileMenuBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openSidebar();
+  });
+
+  sidebarBackdrop?.addEventListener('click', () => {
+    closeSidebar();
+  });
 
   // Thread Login Form
   newThreadForm.addEventListener('submit', (e) => {
