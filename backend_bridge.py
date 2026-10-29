@@ -58,8 +58,7 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
             self._send_json(200, {
                 "status": "ok",
                 "service": "Baasha Agent API Bridge",
-                "stats": stats,
-                "active_threads": memory_mgr.get_all_threads()
+                "stats": stats
             })
             return
 
@@ -67,14 +66,13 @@ class RAGAPIHandler(BaseHTTPRequestHandler):
             self._send_json(200, {
                 "status": "ok",
                 "service": "Baasha Agent API Bridge",
-                "stats": stats,
-                "active_threads": memory_mgr.get_all_threads()
+                "stats": stats
             })
             return
 
         if self.path == "/api/threads":
-            threads = memory_mgr.get_all_threads()
-            self._send_json(200, {"threads": threads})
+            # Privacy: Do not expose all users' thread IDs
+            self._send_json(200, {"threads": []})
             return
 
         if self.path.startswith("/api/history"):

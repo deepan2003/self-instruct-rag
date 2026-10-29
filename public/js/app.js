@@ -9,26 +9,19 @@ const state = {
   currentThread: localStorage.getItem('current_thread') || null,
   topK: 4,
   threshold: 0.10,
-  isProcessing: false,
-  threads: []
+  isProcessing: false
 };
 
 // DOM Elements
 const threadModal = document.getElementById('threadModal');
 const newThreadForm = document.getElementById('newThreadForm');
 const threadInput = document.getElementById('threadInput');
-const existingThreadsSection = document.getElementById('existingThreadsSection');
-const existingThreadsSelect = document.getElementById('existingThreadsSelect');
-const resumeThreadBtn = document.getElementById('resumeThreadBtn');
 
 const displayThreadName = document.getElementById('displayThreadName');
 const activeThreadPill = document.getElementById('activeThreadPill');
 const userAvatar = document.getElementById('userAvatar');
-const switchThreadBtn = document.getElementById('switchThreadBtn');
-const newThreadBtn = document.getElementById('newThreadBtn');
 const clearThreadBtn = document.getElementById('clearThreadBtn');
-const threadsList = document.getElementById('threadsList');
-const threadCountBadge = document.getElementById('threadCountBadge');
+const logoutBtn = document.getElementById('logoutBtn');
 
 const topKSlider = document.getElementById('topKSlider');
 const topKVal = document.getElementById('topKVal');
@@ -56,12 +49,11 @@ const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 // ==============================================================================
 document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
-  await loadThreadsList();
 
   if (!state.currentThread) {
     showModal();
   } else {
-    setThread(state.currentThread);
+    await setThread(state.currentThread);
   }
 });
 
@@ -81,32 +73,23 @@ function setupEventListeners() {
     }
   });
 
-  // Resume Existing Thread Button
-  resumeThreadBtn.addEventListener('click', () => {
-    const val = existingThreadsSelect.value;
-    if (val) {
-      setThread(val);
-      hideModal();
-    }
-  });
-
-  // Switch Thread
-  switchThreadBtn.addEventListener('click', () => {
-    showModal();
-  });
-
-  // New Thread
-  newThreadBtn.addEventListener('click', () => {
-    threadInput.value = '';
-    showModal();
-  });
-
   // Clear Thread History
   clearThreadBtn.addEventListener('click', async () => {
     if (!state.currentThread) return;
-    if (confirm(`Are you sure you want to clear memory for thread '${state.currentThread}'?`)) {
+    if (confirm(`Are you sure you want to clear your chat history, ${state.currentThread}?`)) {
       await clearCurrentThread();
     }
+  });
+
+  // Log Out / Change User
+  logoutBtn?.addEventListener('click', () => {
+    localStorage.removeItem('current_thread');
+    state.currentThread = null;
+    threadInput.value = '';
+    messagesContainer.innerHTML = '';
+    messagesContainer.appendChild(welcomeHero);
+    welcomeHero.style.display = 'block';
+    showModal();
   });
 
   // Sliders
@@ -136,18 +119,6 @@ function setupEventListeners() {
 
   // Form Submit
   chatForm.addEventListener('submit', handleSendMessage);
-
-  // Quick Starter Prompts
-  document.querySelectorAll('.prompt-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const prompt = card.getAttribute('data-prompt');
-      if (prompt) {
-        chatInput.value = prompt;
-        chatInput.focus();
-        chatForm.dispatchEvent(new Event('submit'));
-      }
-    });
-  });
 }
 
 // ==============================================================================
@@ -162,52 +133,14 @@ function hideModal() {
   threadModal.classList.add('hidden');
 }
 
-async function loadThreadsList() {
-  try {
-    const res = await fetch(`${API_BASE}/api/threads`);
-    const data = await res.json();
-    state.threads = data.threads || [];
-
-    // Update modal select dropdown
-    existingThreadsSelect.innerHTML = '<option value="">Select a previous thread...</option>';
-    if (state.threads.length > 0) {
-      existingThreadsSection.style.display = 'block';
-      state.threads.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t;
-        existingThreadsSelect.appendChild(opt);
-      });
-    } else {
-      existingThreadsSection.style.display = 'none';
-    }
-
-    // Update sidebar saved sessions
-    threadsList.innerHTML = '';
-    threadCountBadge.textContent = state.threads.length;
-    state.threads.forEach(t => {
-      const pill = document.createElement('div');
-      pill.className = `thread-pill ${t === state.currentThread ? 'active' : ''}`;
-      pill.innerHTML = `<span>💬</span><span>${escapeHtml(t)}</span>`;
-      pill.addEventListener('click', () => {
-        setThread(t);
-      });
-      threadsList.appendChild(pill);
-    });
-  } catch (err) {
-    console.error('Failed to load threads list:', err);
-  }
-}
-
 async function setThread(threadId) {
   state.currentThread = threadId;
   localStorage.setItem('current_thread', threadId);
 
   displayThreadName.textContent = threadId;
-  activeThreadPill.textContent = `Thread: ${threadId}`;
+  activeThreadPill.textContent = `User: ${threadId}`;
   userAvatar.textContent = threadId.charAt(0).toUpperCase();
 
-  await loadThreadsList();
   await loadThreadHistory(threadId);
 }
 
@@ -314,9 +247,6 @@ async function handleSendMessage(e) {
     // Hide reasoning card & render assistant output
     hideReasoningCard();
     appendMessage('assistant', responsePayload.answer, responsePayload);
-
-    // Refresh saved threads count if new
-    await loadThreadsList();
 
   } catch (err) {
     hideReasoningCard();

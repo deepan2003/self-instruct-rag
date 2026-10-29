@@ -19,41 +19,31 @@
     <div class="modal-card">
       <div class="modal-badge">
         <span class="badge-dot"></span>
-        <span>Isolated Memory Environment</span>
+        <span>Private Session Gateway</span>
       </div>
       <h2 class="modal-title">⚡ Welcome to Baasha Agent</h2>
       <p class="modal-desc">
-        Enter your <strong>Username</strong> or <strong>Thread ID</strong> to start. 
-        Each thread maintains isolated conversational memory — discussions and drafts in one session will never leak to another.
+        Enter your <strong>Username</strong> or <strong>ID</strong> to access your private workspace. 
+        Your conversation memory is strictly isolated to your own session and is never visible to anyone else.
       </p>
 
       <form id="newThreadForm" class="modal-form">
         <div class="input-group">
-          <label for="threadInput">Thread ID / Username</label>
+          <label for="threadInput">Your Username / ID</label>
           <input 
             type="text" 
             id="threadInput" 
-            placeholder="e.g. deepan, researcher1, dev_thread_1" 
+            placeholder="e.g. deepan, researcher1, user123" 
             required 
             autocomplete="off" 
             autofocus
           >
         </div>
         <button type="submit" class="btn-primary btn-glow">
-          <span>Start Baasha Agent</span>
+          <span>Enter Workspace</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
       </form>
-
-      <div id="existingThreadsSection" class="modal-existing" style="display: none;">
-        <div class="divider"><span>OR RESUME PREVIOUS SESSION</span></div>
-        <div class="existing-picker">
-          <select id="existingThreadsSelect">
-            <option value="">Select a previous thread...</option>
-          </select>
-          <button type="button" id="resumeThreadBtn" class="btn-secondary">Resume</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -77,35 +67,12 @@
 
       <!-- Active User Card -->
       <div class="active-user-card">
-        <div class="user-avatar" id="userAvatar">B</div>
+        <div class="user-avatar" id="userAvatar">U</div>
         <div class="user-info">
-          <span class="user-label">ACTIVE THREAD</span>
-          <span class="user-name" id="displayThreadName">default</span>
+          <span class="user-label">LOGGED IN AS</span>
+          <span class="user-name" id="displayThreadName">User</span>
         </div>
         <span class="status-indicator" title="Connected"></span>
-      </div>
-
-      <!-- Session Actions -->
-      <div class="session-actions">
-        <button id="switchThreadBtn" class="btn-action">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          <span>Switch User</span>
-        </button>
-        <button id="newThreadBtn" class="btn-action">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          <span>New Thread</span>
-        </button>
-      </div>
-
-      <!-- Saved Threads Drawer -->
-      <div class="sidebar-section">
-        <div class="section-title">
-          <span>SAVED SESSIONS</span>
-          <span class="badge" id="threadCountBadge">0</span>
-        </div>
-        <div class="threads-list" id="threadsList">
-          <!-- Dynamic thread pills -->
-        </div>
       </div>
 
       <!-- RAG Settings -->
@@ -156,9 +123,13 @@
 
       <!-- Sidebar Footer -->
       <div class="sidebar-footer">
-        <button id="clearThreadBtn" class="btn-danger-outline" title="Clear current thread memory">
+        <button id="clearThreadBtn" class="btn-danger-outline" title="Clear current chat memory">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          <span>Clear This Session</span>
+          <span>Clear Chat History</span>
+        </button>
+        <button id="logoutBtn" class="btn-action" style="margin-top: 10px; width: 100%; justify-content: center;" title="Log out from this session">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Log Out</span>
         </button>
       </div>
     </aside>
@@ -197,44 +168,50 @@
         <!-- Welcome Hero Banner (Visible when thread is empty) -->
         <div class="welcome-hero" id="welcomeHero">
           <div class="hero-badge">⚡ Baasha Agent • Autonomous Intelligence</div>
-          <h1 class="hero-title">How can Baasha Agent assist you today?</h1>
+          <h1 class="hero-title">What can Baasha Agent do?</h1>
           <p class="hero-subtitle">
-            Draft emails prepared for <strong>Gmail</strong> with recipient verification, check live weather across 
-            <strong>Tamil Nadu</strong>, query the <strong>SELF-INSTRUCT</strong> paper with anti-hallucination citations, 
-            run <strong>Python code</strong>, or search real-time <strong>breaking news</strong>.
+            An autonomous ReAct orchestrator equipped with specialized tools, research intelligence, and isolated private memory.
           </p>
 
-          <!-- Quick Starter Prompts -->
-          <div class="quick-prompts-grid">
-            <div class="prompt-card" data-prompt="draft an email to manager@company.com requesting 2 days sick leave">
-              <div class="card-icon">✉️</div>
-              <div class="card-text">
-                <strong>Gmail Draft</strong>
-                <span>Draft leave request with recipient & review in Gmail</span>
+          <!-- Core Agent Capabilities Overview -->
+          <div class="capabilities-showcase">
+            <div class="capability-item">
+              <div class="capability-icon">✉️</div>
+              <div class="capability-text">
+                <strong>Gmail Email Drafting</strong>
+                <span>Drafts structured, professional emails with recipient verification ready for you to review and send (never sends automatically).</span>
               </div>
             </div>
 
-            <div class="prompt-card" data-prompt="What is the weather in Chennai right now?">
-              <div class="card-icon">🌦️</div>
-              <div class="card-text">
-                <strong>Chennai Live Weather</strong>
-                <span>Check temperature, humidity and rain telemetry</span>
+            <div class="capability-item">
+              <div class="capability-icon">🌦️</div>
+              <div class="capability-text">
+                <strong>Tamil Nadu Live Weather</strong>
+                <span>Instant meteorological telemetry, temperature, humidity, and forecasts across all 38 districts in Tamil Nadu.</span>
               </div>
             </div>
 
-            <div class="prompt-card" data-prompt="What are the 4 steps in the automatic instruction generation pipeline?">
-              <div class="card-icon">📖</div>
-              <div class="card-text">
-                <strong>SELF-INSTRUCT Paper</strong>
-                <span>Explain the core 4 data pipeline steps</span>
+            <div class="capability-item">
+              <div class="capability-icon">📖</div>
+              <div class="capability-text">
+                <strong>SELF-INSTRUCT Research Intelligence</strong>
+                <span>Anti-hallucination fact retrieval from the ACL 2023 paper with exact page numbers, section citations, and Pydantic validation.</span>
               </div>
             </div>
 
-            <div class="prompt-card" data-prompt="run code: print([x**2 for x in range(6)])">
-              <div class="card-icon">💻</div>
-              <div class="card-text">
-                <strong>Python Sandbox</strong>
-                <span>Execute Python calculations in real-time</span>
+            <div class="capability-item">
+              <div class="capability-icon">💻</div>
+              <div class="capability-text">
+                <strong>Python Code Execution Sandbox</strong>
+                <span>Executes Python scripts in an isolated local subprocess with real-time stdout/stderr metrics.</span>
+              </div>
+            </div>
+
+            <div class="capability-item">
+              <div class="capability-icon">🌐</div>
+              <div class="capability-text">
+                <strong>Live Web & Breaking News</strong>
+                <span>Retrieves real-time headlines and web intelligence powered by the Tavily Search API.</span>
               </div>
             </div>
           </div>
