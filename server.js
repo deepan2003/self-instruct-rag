@@ -37,7 +37,7 @@ let pythonProcess = null;
 function ensurePythonDependencies() {
   console.log(`[Node.js] Using Python binary: ${PYTHON_BIN}`);
   try {
-    const check = spawnSync(PYTHON_BIN, ['-c', 'import pydantic, requests']);
+    const check = spawnSync(PYTHON_BIN, ['-c', 'import pydantic, requests, numpy, sklearn']);
     if (check.status !== 0) {
       console.log(`[Node.js] Python dependencies missing. Installing requirements via ${PYTHON_BIN}...`);
       const pipRes = spawnSync(PYTHON_BIN, ['-m', 'pip', 'install', '--break-system-packages', '-r', 'requirements.txt'], {
@@ -51,7 +51,7 @@ function ensurePythonDependencies() {
         });
       }
     } else {
-      console.log('[Node.js] Python requirements verified (pydantic & requests ready).');
+      console.log('[Node.js] Python requirements verified (pydantic, requests, numpy, sklearn ready).');
     }
   } catch (err) {
     console.warn('[Node.js] Python dependency check warning:', err.message);
