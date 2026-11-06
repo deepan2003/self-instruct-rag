@@ -1,290 +1,531 @@
 /**
- * Baasha Agent - ReAct Multi-Tool Intelligence Assistant
+ * Cursor iOS Experience - Autonomous Agent & Cloud Workspaces
+ * Inspired by official Cursor iOS app curated by Mobbin
  */
 
-const API_BASE = ''; // Proxied via Express on same origin
+const API_BASE = ''; // Express server on same origin
 
 // Application State
 const state = {
   currentThread: localStorage.getItem('current_thread') || null,
+  activeView: 'welcome',
   topK: 4,
   threshold: 0.10,
   isProcessing: false,
-  attachment: null // { name, type, size, data }
+  attachment: null, // { name, type, size, data }
+  prMerged: false,
+  speechRecognition: null,
+  isListening: false
 };
 
-// DOM Elements
-const threadModal = document.getElementById('threadModal');
-const newThreadForm = document.getElementById('newThreadForm');
-const threadInput = document.getElementById('threadInput');
+// DOM Cache
+const dom = {
+  // Presentation
+  btnToggleFrameMode: document.getElementById('btnToggleFrameMode'),
+  frameToggleIcon: document.getElementById('frameToggleIcon'),
+  frameToggleLabel: document.getElementById('frameToggleLabel'),
+  statusClock: document.getElementById('statusClock'),
+  dynamicIsland: document.getElementById('dynamicIsland'),
+  islandIndicator: document.getElementById('islandIndicator'),
+  iosToast: document.getElementById('iosToast'),
 
-const displayThreadName = document.getElementById('displayThreadName');
-const activeThreadPill = document.getElementById('activeThreadPill');
-const userAvatar = document.getElementById('userAvatar');
-const clearThreadBtn = document.getElementById('clearThreadBtn');
-const logoutBtn = document.getElementById('logoutBtn');
+  // Views
+  viewWelcome: document.getElementById('viewWelcome'),
+  viewAllAgents: document.getElementById('viewAllAgents'),
+  viewThread: document.getElementById('viewThread'),
+  viewPR: document.getElementById('viewPR'),
 
-const topKSlider = document.getElementById('topKSlider');
-const topKVal = document.getElementById('topKVal');
-const thresholdSlider = document.getElementById('thresholdSlider');
-const thresholdVal = document.getElementById('thresholdVal');
+  // Welcome View
+  welcomeAuthForm: document.getElementById('welcomeAuthForm'),
+  welcomeThreadInput: document.getElementById('welcomeThreadInput'),
 
-const messagesContainer = document.getElementById('messagesContainer');
-const welcomeHero = document.getElementById('welcomeHero');
-const chatForm = document.getElementById('chatForm');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
+  // All Agents View
+  btnAgentsBackToWelcome: document.getElementById('btnAgentsBackToWelcome'),
+  btnAgentsMenu: document.getElementById('btnAgentsMenu'),
+  currentWorkspaceName: document.getElementById('currentWorkspaceName'),
+  workspaceItemRow: document.getElementById('workspaceItemRow'),
+  btnConnectSourceControl: document.getElementById('btnConnectSourceControl'),
+  connectBtnText: document.getElementById('connectBtnText'),
+  homeInputForm: document.getElementById('homeInputForm'),
+  homeInputText: document.getElementById('homeInputText'),
+  homeAttachBtn: document.getElementById('homeAttachBtn'),
+  homeMicBtn: document.getElementById('homeMicBtn'),
 
-// File Upload Elements
-const attachFileBtn = document.getElementById('attachFileBtn');
-const fileUploadInput = document.getElementById('fileUploadInput');
-const filePreviewContainer = document.getElementById('filePreviewContainer');
-const filePreviewIcon = document.getElementById('filePreviewIcon');
-const imagePreviewThumb = document.getElementById('imagePreviewThumb');
-const filePreviewName = document.getElementById('filePreviewName');
-const filePreviewSize = document.getElementById('filePreviewSize');
-const removeFileBtn = document.getElementById('removeFileBtn');
+  // Thread View
+  btnThreadBackToAgents: document.getElementById('btnThreadBackToAgents'),
+  displayActiveThreadTitle: document.getElementById('displayActiveThreadTitle'),
+  btnThreadMore: document.getElementById('btnThreadMore'),
+  threadMessagesContainer: document.getElementById('threadMessagesContainer'),
+  threadActionsBar: document.getElementById('threadActionsBar'),
+  btnOpenPRView: document.getElementById('btnOpenPRView'),
+  btnMarkReady: document.getElementById('btnMarkReady'),
+  markReadyLabel: document.getElementById('markReadyLabel'),
+  actionPillDiffStats: document.getElementById('actionPillDiffStats'),
 
-const reasoningBoxWrapper = document.getElementById('reasoningBoxWrapper');
-const stepGuardrails = document.getElementById('stepGuardrails');
-const stepAgent = document.getElementById('stepAgent');
-const stepExecution = document.getElementById('stepExecution');
-const stepGrounding = document.getElementById('stepGrounding');
+  // Thread Input
+  threadInputForm: document.getElementById('threadInputForm'),
+  threadFileInput: document.getElementById('threadFileInput'),
+  threadAttachBtn: document.getElementById('threadAttachBtn'),
+  threadChatInput: document.getElementById('threadChatInput'),
+  threadMicBtn: document.getElementById('threadMicBtn'),
+  threadSendBtn: document.getElementById('threadSendBtn'),
+  sendBtnIcon: document.getElementById('sendBtnIcon'),
+  threadAttachmentPreview: document.getElementById('threadAttachmentPreview'),
+  attachChipIcon: document.getElementById('attachChipIcon'),
+  attachChipImg: document.getElementById('attachChipImg'),
+  attachChipName: document.getElementById('attachChipName'),
+  btnRemoveAttachment: document.getElementById('btnRemoveAttachment'),
 
-const sidebar = document.getElementById('sidebar');
-const sidebarToggle = document.getElementById('sidebarToggle');
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  // PR View
+  btnPRBackToThread: document.getElementById('btnPRBackToThread'),
+  btnCopyPRLink: document.getElementById('btnCopyPRLink'),
+  btnPRMenu: document.getElementById('btnPRMenu'),
+  prMainTitle: document.getElementById('prMainTitle'),
+  prStatusBadge: document.getElementById('prStatusBadge'),
+  btnSquashAndMerge: document.getElementById('btnSquashAndMerge'),
+  squashMergeLabel: document.getElementById('squashMergeLabel'),
+  demoTempDisplay: document.getElementById('demoTempDisplay'),
+  demoLocationName: document.getElementById('demoLocationName'),
+  demoConditionLabel: document.getElementById('demoConditionLabel'),
+  weatherDemoCard: document.getElementById('weatherDemoCard'),
+
+  // Settings Sheet
+  settingsSheet: document.getElementById('settingsSheet'),
+  sheetBackdrop: document.getElementById('sheetBackdrop'),
+  btnCloseSheet: document.getElementById('btnCloseSheet'),
+  sheetThreadName: document.getElementById('sheetThreadName'),
+  sheetAvatar: document.getElementById('sheetAvatar'),
+  sheetTopKSlider: document.getElementById('sheetTopKSlider'),
+  sheetTopKVal: document.getElementById('sheetTopKVal'),
+  sheetThresholdSlider: document.getElementById('sheetThresholdSlider'),
+  sheetThresholdVal: document.getElementById('sheetThresholdVal'),
+  btnClearHistoryBtn: document.getElementById('btnClearHistoryBtn'),
+  btnSwitchAccountBtn: document.getElementById('btnSwitchAccountBtn')
+};
 
 // ==============================================================================
 // INITIALIZATION
 // ==============================================================================
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  initClock();
   setupEventListeners();
+  initSpeechRecognition();
 
   if (!state.currentThread) {
-    showModal();
+    switchView('welcome');
   } else {
-    await setThread(state.currentThread);
+    updateWorkspaceLabels(state.currentThread);
+    switchView('agents');
+    loadThreadHistory(state.currentThread);
   }
 });
 
-// Setup All UI Event Handlers
+// Update iOS Status Bar Clock
+function initClock() {
+  function updateTime() {
+    const now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    hours = hours % 12 || 12;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    if (dom.statusClock) {
+      dom.statusClock.textContent = `${hours}:${minutes}`;
+    }
+  }
+  updateTime();
+  setInterval(updateTime, 30000);
+}
+
+// ==============================================================================
+// VIEW SWITCHER (Welcome -> All Agents -> Thread -> PR)
+// ==============================================================================
+function switchView(viewName) {
+  state.activeView = viewName;
+
+  dom.viewWelcome.style.display = viewName === 'welcome' ? 'flex' : 'none';
+  dom.viewAllAgents.style.display = viewName === 'agents' ? 'flex' : 'none';
+  dom.viewThread.style.display = viewName === 'thread' ? 'flex' : 'none';
+  dom.viewPR.style.display = viewName === 'pr' ? 'flex' : 'none';
+
+  if (viewName === 'thread') {
+    scrollThreadToBottom();
+    setTimeout(() => dom.threadChatInput?.focus(), 150);
+  }
+}
+
+// ==============================================================================
+// EVENT LISTENERS
+// ==============================================================================
 function setupEventListeners() {
-  // Mobile / Toggle Sidebar with Backdrop
-  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-
-  function openSidebar() {
-    sidebar.classList.add('open');
-    sidebarBackdrop?.classList.add('active');
-  }
-
-  function closeSidebar() {
-    sidebar.classList.remove('open');
-    sidebarBackdrop?.classList.remove('active');
-  }
-
-  sidebarToggle?.addEventListener('click', () => {
-    if (sidebar.classList.contains('open')) {
-      closeSidebar();
+  // Desktop Frame Toggle (iPhone Frame vs Fullscreen)
+  dom.btnToggleFrameMode?.addEventListener('click', () => {
+    const isFrame = document.body.classList.contains('desktop-frame-mode');
+    if (isFrame) {
+      document.body.classList.remove('desktop-frame-mode');
+      document.body.classList.add('desktop-full-mode');
+      dom.frameToggleIcon.textContent = '🖥️';
+      dom.frameToggleLabel.textContent = 'Full Width Mode';
+      showToast('Switched to Full Width View');
     } else {
-      openSidebar();
+      document.body.classList.remove('desktop-full-mode');
+      document.body.classList.add('desktop-frame-mode');
+      dom.frameToggleIcon.textContent = '📱';
+      dom.frameToggleLabel.textContent = 'iPhone Frame View';
+      showToast('Switched to iPhone Frame View');
     }
   });
 
-  mobileMenuBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openSidebar();
-  });
-
-  sidebarBackdrop?.addEventListener('click', () => {
-    closeSidebar();
-  });
-
-  // Thread Login Form
-  newThreadForm.addEventListener('submit', (e) => {
+  // Welcome Form Submit
+  dom.welcomeAuthForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const val = threadInput.value.trim();
-    if (val) {
-      setThread(val);
-      hideModal();
+    const threadId = dom.welcomeThreadInput.value.trim() || 'web-client';
+    setThread(threadId);
+    switchView('agents');
+    showToast(`Workspace connected: ${threadId}`);
+  });
+
+  // All Agents Navigation
+  dom.btnAgentsBackToWelcome?.addEventListener('click', () => {
+    switchView('welcome');
+  });
+
+  dom.workspaceItemRow?.addEventListener('click', () => {
+    switchView('thread');
+  });
+
+  dom.btnAgentsMenu?.addEventListener('click', openSettingsSheet);
+  dom.btnThreadMore?.addEventListener('click', openSettingsSheet);
+  dom.btnPRMenu?.addEventListener('click', openSettingsSheet);
+
+  // Connect Source Control Button
+  dom.btnConnectSourceControl?.addEventListener('click', () => {
+    const isConnected = dom.btnConnectSourceControl.classList.toggle('connected');
+    if (isConnected) {
+      dom.connectBtnText.textContent = '✓ Connected to GitHub';
+      showToast('Source Control connected: GitHub @deepan2003');
+    } else {
+      dom.connectBtnText.textContent = 'Connect';
+      showToast('Source Control disconnected');
     }
   });
 
-  // Clear Thread History
-  clearThreadBtn.addEventListener('click', async () => {
-    if (!state.currentThread) return;
-    if (confirm(`Are you sure you want to clear your chat history, ${state.currentThread}?`)) {
-      await clearCurrentThread();
-    }
+  // Quick Spark Buttons on All Agents screen
+  document.querySelectorAll('.spark-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const prompt = chip.getAttribute('data-prompt');
+      if (prompt) {
+        switchView('thread');
+        executeAgentQuery(prompt);
+      }
+    });
   });
 
-  // Log Out / Change User
-  logoutBtn?.addEventListener('click', () => {
-    localStorage.removeItem('current_thread');
-    state.currentThread = null;
-    threadInput.value = '';
-    messagesContainer.innerHTML = '';
-    messagesContainer.appendChild(welcomeHero);
-    welcomeHero.style.display = 'block';
-    showModal();
+  // Home Bottom Input Bar
+  dom.homeInputForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = dom.homeInputText.value.trim();
+    if (!text && !state.attachment) return;
+    dom.homeInputText.value = '';
+    switchView('thread');
+    executeAgentQuery(text);
   });
 
-  // Sliders
-  topKSlider.addEventListener('input', (e) => {
-    state.topK = parseInt(e.target.value);
-    topKVal.textContent = state.topK;
+  // Thread Header Navigation
+  dom.btnThreadBackToAgents?.addEventListener('click', () => {
+    switchView('agents');
   });
 
-  thresholdSlider.addEventListener('input', (e) => {
-    state.threshold = parseFloat(e.target.value);
-    thresholdVal.textContent = state.threshold.toFixed(2);
+  // Thread Input Form Submit
+  dom.threadInputForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = dom.threadChatInput.value.trim();
+    if (!text && !state.attachment) return;
+    dom.threadChatInput.value = '';
+    dom.threadChatInput.style.height = 'auto';
+    executeAgentQuery(text);
   });
 
-  // Auto-expand textarea
-  chatInput.addEventListener('input', () => {
-    chatInput.style.height = 'auto';
-    chatInput.style.height = Math.min(chatInput.scrollHeight, 160) + 'px';
+  // Auto-grow textarea
+  dom.threadChatInput?.addEventListener('input', () => {
+    dom.threadChatInput.style.height = 'auto';
+    dom.threadChatInput.style.height = Math.min(dom.threadChatInput.scrollHeight, 100) + 'px';
   });
 
-  // Enter to send, Shift+Enter for newline
-  chatInput.addEventListener('keydown', (e) => {
+  // Enter to send (Shift+Enter for newline)
+  dom.threadChatInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      chatForm.dispatchEvent(new Event('submit'));
+      dom.threadInputForm.dispatchEvent(new Event('submit'));
     }
   });
 
-  // Form Submit
-  chatForm.addEventListener('submit', handleSendMessage);
+  // File Upload Handlers (Thread & Home)
+  dom.homeAttachBtn?.addEventListener('click', () => dom.threadFileInput.click());
+  dom.threadAttachBtn?.addEventListener('click', () => dom.threadFileInput.click());
 
-  // Attachment Button & Input
-  attachFileBtn?.addEventListener('click', () => {
-    fileUploadInput.click();
+  dom.threadFileInput?.addEventListener('change', handleFileSelected);
+  dom.btnRemoveAttachment?.addEventListener('click', clearAttachment);
+
+  // Bottom Action Buttons (View PR & Mark Ready)
+  dom.btnOpenPRView?.addEventListener('click', () => {
+    switchView('pr');
   });
 
-  fileUploadInput?.addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Enforce 25 MB limit
-    if (file.size > 25 * 1024 * 1024) {
-      alert('File size exceeds the 25 MB limit.');
-      fileUploadInput.value = '';
-      return;
+  dom.btnMarkReady?.addEventListener('click', () => {
+    const isReady = dom.btnMarkReady.classList.toggle('ready');
+    if (isReady) {
+      dom.markReadyLabel.textContent = '✓ Ready for Review';
+      showToast('Task marked ready for review');
+    } else {
+      dom.markReadyLabel.textContent = 'Mark Ready';
     }
+  });
 
-    const reader = new FileReader();
-    reader.onload = (loadEvt) => {
-      const dataUrl = loadEvt.target.result;
-      state.attachment = {
-        name: file.name,
-        type: file.type || 'application/octet-stream',
-        size: file.size,
-        data: dataUrl
-      };
+  // PR Navigation
+  dom.btnPRBackToThread?.addEventListener('click', () => {
+    switchView('thread');
+  });
 
-      // Populate file preview container
-      filePreviewName.textContent = file.name;
-      filePreviewSize.textContent = formatBytes(file.size);
+  dom.btnCopyPRLink?.addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href);
+    showToast('PR link copied to clipboard');
+  });
+
+  // Squash & Merge Button
+  dom.btnSquashAndMerge?.addEventListener('click', () => {
+    if (state.prMerged) return;
+    state.prMerged = true;
+    dom.btnSquashAndMerge.classList.add('merged');
+    dom.squashMergeLabel.textContent = '✓ Merged and Deployed';
+    dom.prStatusBadge.textContent = 'Merged';
+    dom.prStatusBadge.style.backgroundColor = '#E0E7FF';
+    dom.prStatusBadge.style.color = '#3730A3';
+    showToast('Pull request #1 successfully squashed & merged!');
+  });
+
+  // Demo Interactive Condition Switcher in PR View
+  document.querySelectorAll('.demo-switch-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.demo-switch-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const temp = btn.getAttribute('data-temp');
+      const city = btn.getAttribute('data-city');
+      const label = btn.getAttribute('data-label');
+      const condition = btn.getAttribute('data-condition');
+
+      dom.demoTempDisplay.textContent = temp;
+      dom.demoLocationName.textContent = city;
+      dom.demoConditionLabel.textContent = label;
+
+      updateDemoVisuals(condition);
+    });
+  });
+
+  // Voice Microphone Buttons
+  dom.homeMicBtn?.addEventListener('click', toggleVoiceDictation);
+  dom.threadMicBtn?.addEventListener('click', toggleVoiceDictation);
+
+  // Settings Sheet Controls
+  dom.btnCloseSheet?.addEventListener('click', closeSettingsSheet);
+  dom.sheetBackdrop?.addEventListener('click', closeSettingsSheet);
+
+  dom.sheetTopKSlider?.addEventListener('input', (e) => {
+    state.topK = parseInt(e.target.value);
+    dom.sheetTopKVal.textContent = state.topK;
+  });
+
+  dom.sheetThresholdSlider?.addEventListener('input', (e) => {
+    state.threshold = parseFloat(e.target.value);
+    dom.sheetThresholdVal.textContent = state.threshold.toFixed(2);
+  });
+
+  dom.btnClearHistoryBtn?.addEventListener('click', async () => {
+    if (!state.currentThread) return;
+    if (confirm('Are you sure you want to clear chat history for this workspace?')) {
+      await clearCurrentThread();
+      closeSettingsSheet();
+      showToast('Chat history cleared');
+    }
+  });
+
+  dom.btnSwitchAccountBtn?.addEventListener('click', () => {
+    closeSettingsSheet();
+    switchView('welcome');
+    showToast('Switched to login screen');
+  });
+}
+
+// ==============================================================================
+// WEATHER DEMO CARD VISUAL SWITCHER
+// ==============================================================================
+function updateDemoVisuals(condition) {
+  const card = dom.weatherDemoCard;
+  const sunOrb = document.getElementById('sunOrbGlow');
+
+  if (condition === 'sunny') {
+    card.style.background = 'linear-gradient(180deg, #0284C7 0%, #38BDF8 60%, #BAE6FD 100%)';
+    if (sunOrb) sunOrb.style.display = 'block';
+  } else if (condition === 'rainy') {
+    card.style.background = 'linear-gradient(180deg, #334155 0%, #475569 55%, #64748B 100%)';
+    if (sunOrb) sunOrb.style.display = 'none';
+  } else if (condition === 'storm') {
+    card.style.background = 'linear-gradient(180deg, #1E1B4B 0%, #312E81 60%, #4338CA 100%)';
+    if (sunOrb) sunOrb.style.display = 'none';
+  } else {
+    // Partly cloudy
+    card.style.background = 'linear-gradient(180deg, #1E88E5 0%, #42A5F5 45%, #90CAF9 100%)';
+    if (sunOrb) sunOrb.style.display = 'block';
+  }
+}
+
+// ==============================================================================
+// VOICE SPEECH RECOGNITION
+// ==============================================================================
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      state.isListening = true;
+      dom.threadMicBtn?.classList.add('listening');
+      dom.homeMicBtn?.classList.add('listening');
+      showToast('Listening... Speak now');
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (dom.threadChatInput) dom.threadChatInput.value = transcript;
+      if (dom.homeInputText) dom.homeInputText.value = transcript;
+      showToast(`Recognized: "${transcript}"`);
+    };
+
+    recognition.onerror = () => {
+      state.isListening = false;
+      dom.threadMicBtn?.classList.remove('listening');
+      dom.homeMicBtn?.classList.remove('listening');
+    };
+
+    recognition.onend = () => {
+      state.isListening = false;
+      dom.threadMicBtn?.classList.remove('listening');
+      dom.homeMicBtn?.classList.remove('listening');
+    };
+
+    state.speechRecognition = recognition;
+  }
+}
+
+function toggleVoiceDictation() {
+  if (!state.speechRecognition) {
+    showToast('Voice dictation simulated (Type or speak in supported browsers)');
+    return;
+  }
+  if (state.isListening) {
+    state.speechRecognition.stop();
+  } else {
+    try {
+      state.speechRecognition.start();
+    } catch (e) {
+      showToast('Mic active');
+    }
+  }
+}
+
+// ==============================================================================
+// FILE ATTACHMENTS
+// ==============================================================================
+function handleFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.attachment = {
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      data: reader.result
+    };
+
+    // Show Chip Preview
+    if (dom.threadAttachmentPreview) {
+      dom.threadAttachmentPreview.style.display = 'flex';
+      dom.attachChipName.textContent = file.name;
 
       if (file.type.startsWith('image/')) {
-        imagePreviewThumb.src = dataUrl;
-        imagePreviewThumb.style.display = 'block';
-        filePreviewIcon.style.display = 'none';
-        chatInput.placeholder = `Ask a question about ${file.name}, or press Enter...`;
+        dom.attachChipImg.src = reader.result;
+        dom.attachChipImg.style.display = 'inline-block';
+        dom.attachChipIcon.style.display = 'none';
       } else {
-        imagePreviewThumb.style.display = 'none';
-        filePreviewIcon.style.display = 'block';
-        filePreviewIcon.textContent = getFileIcon(file.name);
-        chatInput.placeholder = `Summarize or ask questions about ${file.name}, or press Enter...`;
+        dom.attachChipImg.style.display = 'none';
+        dom.attachChipIcon.style.display = 'inline-block';
+        dom.attachChipIcon.textContent = getFileEmoji(file.name);
       }
+    }
 
-      filePreviewContainer.style.display = 'block';
-      attachFileBtn.classList.add('has-file');
-      chatInput.focus();
-    };
-    reader.readAsDataURL(file);
-  });
+    showToast(`Attached: ${file.name}`);
+    dom.threadChatInput?.focus();
+  };
 
-  removeFileBtn?.addEventListener('click', () => {
-    clearAttachment();
-  });
+  reader.readAsDataURL(file);
 }
 
 function clearAttachment() {
   state.attachment = null;
-  if (fileUploadInput) fileUploadInput.value = '';
-  if (filePreviewContainer) filePreviewContainer.style.display = 'none';
-  if (imagePreviewThumb) {
-    imagePreviewThumb.src = '';
-    imagePreviewThumb.style.display = 'none';
-  }
-  if (attachFileBtn) attachFileBtn.classList.remove('has-file');
-  chatInput.placeholder = "Draft an email, check weather, run code, or ask questions about an attached doc/image...";
+  if (dom.threadFileInput) dom.threadFileInput.value = '';
+  if (dom.threadAttachmentPreview) dom.threadAttachmentPreview.style.display = 'none';
+  if (dom.attachChipImg) dom.attachChipImg.src = '';
 }
 
-function getFileIcon(filename) {
-  const ext = (filename || '').split('.').pop().toLowerCase();
+function getFileEmoji(name) {
+  const ext = (name || '').split('.').pop().toLowerCase();
   if (ext === 'pdf') return '📕';
   if (['doc', 'docx'].includes(ext)) return '📘';
   if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
-  if (['py', 'js', 'json', 'html', 'css'].includes(ext)) return '💻';
+  if (['py', 'js', 'json', 'ts'].includes(ext)) return '💻';
   return '📄';
 }
 
-function formatBytes(bytes) {
-  if (!bytes || bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
 // ==============================================================================
-// THREAD & SESSION MANAGEMENT
+// THREAD & WORKSPACE SESSION
 // ==============================================================================
-function showModal() {
-  threadModal.classList.remove('hidden');
-  threadInput.focus();
-}
-
-function hideModal() {
-  threadModal.classList.add('hidden');
-}
-
-async function setThread(threadId) {
+function setThread(threadId) {
   state.currentThread = threadId;
   localStorage.setItem('current_thread', threadId);
+  updateWorkspaceLabels(threadId);
+}
 
-  displayThreadName.textContent = threadId;
-  activeThreadPill.textContent = `User: ${threadId}`;
-  userAvatar.textContent = threadId.charAt(0).toUpperCase();
-
-  await loadThreadHistory(threadId);
+function updateWorkspaceLabels(threadId) {
+  if (dom.currentWorkspaceName) dom.currentWorkspaceName.textContent = threadId;
+  if (dom.displayActiveThreadTitle) dom.displayActiveThreadTitle.textContent = `${threadId} · agent`;
+  if (dom.sheetThreadName) dom.sheetThreadName.textContent = threadId;
+  if (dom.sheetAvatar) dom.sheetAvatar.textContent = threadId.charAt(0).toUpperCase();
+  if (dom.welcomeThreadInput) dom.welcomeThreadInput.value = threadId;
 }
 
 async function loadThreadHistory(threadId) {
-  messagesContainer.innerHTML = '';
   try {
     const res = await fetch(`${API_BASE}/api/history?thread_id=${encodeURIComponent(threadId)}`);
     const data = await res.json();
     const messages = data.messages || [];
 
-    if (messages.length === 0 || (messages.length === 1 && messages[0].role === 'assistant')) {
-      // Empty or initial welcome message
-      messagesContainer.appendChild(welcomeHero);
-      welcomeHero.style.display = 'block';
-      if (messages.length === 1) {
-        appendMessage('assistant', messages[0].content);
-      }
+    dom.threadMessagesContainer.innerHTML = '';
+
+    if (messages.length === 0) {
+      renderWelcomeThreadStarters();
     } else {
-      welcomeHero.style.display = 'none';
       messages.forEach(m => {
-        appendMessage(m.role, m.content, m.response);
+        appendChatMessage(m.role, m.content, m.response);
       });
+      dom.threadActionsBar.style.display = 'flex';
     }
   } catch (err) {
-    console.error('Failed to load thread history:', err);
+    renderWelcomeThreadStarters();
   }
 }
 
@@ -296,67 +537,85 @@ async function clearCurrentThread() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ thread_id: state.currentThread })
     });
-    await loadThreadHistory(state.currentThread);
+    dom.threadMessagesContainer.innerHTML = '';
+    renderWelcomeThreadStarters();
+    dom.threadActionsBar.style.display = 'none';
   } catch (err) {
-    alert('Failed to clear thread: ' + err.message);
+    showToast('Failed to clear thread');
   }
 }
 
+function renderWelcomeThreadStarters() {
+  const welcomeWrap = document.createElement('div');
+  welcomeWrap.className = 'assistant-msg-wrap';
+  welcomeWrap.innerHTML = `
+    <div class="assistant-body-text">
+      <h2>Welcome to your Cursor Cloud Agent</h2>
+      <p>I can draft emails, run python scripts, check live Tamil Nadu weather, retrieve research citations, and build visual components.</p>
+    </div>
+  `;
+  dom.threadMessagesContainer.appendChild(welcomeWrap);
+}
+
 // ==============================================================================
-// CHAT & REACT REASONING EXECUTION
+// AGENT QUERY EXECUTION & LIVE REACT PIPELINE
 // ==============================================================================
-async function handleSendMessage(e) {
-  e.preventDefault();
-  let prompt = chatInput.value.trim();
+async function executeAgentQuery(queryText) {
+  if (state.isProcessing) return;
+  let prompt = queryText ? queryText.trim() : '';
   const currentAttachment = state.attachment;
 
   if (!prompt && !currentAttachment) return;
-  if (state.isProcessing) return;
 
-  state.isProcessing = true;
-  sendBtn.disabled = true;
-  chatInput.value = '';
-  chatInput.style.height = 'auto';
-
-  // If prompt is empty but attachment is attached, provide intuitive default query
   if (!prompt && currentAttachment) {
     prompt = currentAttachment.type.startsWith('image/')
-      ? "What is there in this image? Please describe and analyze."
-      : "Please summarize this document and list key takeaways.";
+      ? "Analyze and describe the visual architecture and elements of this image."
+      : "Summarize this document and extract its key takeaways.";
   }
 
-  // Clear file attachment preview from input deck
+  // Update header title to reflect active query
+  if (dom.displayActiveThreadTitle) {
+    dom.displayActiveThreadTitle.textContent = truncate(prompt, 26);
+  }
+
+  // Clear attachment
   clearAttachment();
 
-  // Hide welcome hero
-  if (welcomeHero) welcomeHero.style.display = 'none';
+  state.isProcessing = true;
+  setRunningIndicator(true);
 
-  // Render User Message with attachment preview
-  appendMessage('user', prompt, null, currentAttachment);
+  // Append User Bubble
+  appendUserMessage(prompt, currentAttachment);
 
-  // Show Animated Live Reasoning Status Card
-  showReasoningCard();
+  // Create Assistant Message Placeholder
+  const assistantCard = createAssistantMessageCard();
+  dom.threadMessagesContainer.appendChild(assistantCard.container);
+  scrollThreadToBottom();
+
+  const startTime = Date.now();
+  const thoughtInterval = setInterval(() => {
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    assistantCard.thoughtDuration.textContent = `${elapsed}s`;
+  }, 1000);
 
   try {
-    // Stage 1: Guardrail Inspection
-    updateReasoningStep('stepGuardrails', 'active', 'Inspecting security rules...');
-    await delay(200);
-    updateReasoningStep('stepGuardrails', 'done', '✅ Safe & Authorized');
+    // Stage 1: Thinking & MCP tools exploration
+    await delay(350);
+    assistantCard.addTraceStep('thinking', 'Thinking');
+    await delay(300);
+    assistantCard.addTraceStep('command', 'Ran command ls -la /workspace && dev_env -v');
+    await delay(350);
+    assistantCard.addTraceStep('command', 'Explored · get_mcp_tools');
+    await delay(300);
+    assistantCard.addTraceStep('thinking', 'Planning architecture and component demo...');
 
-    // Stage 2: Main Agent Reasoning & Tool Selection
-    if (currentAttachment) {
-      const isImg = currentAttachment.type.startsWith('image/');
-      updateReasoningStep('stepAgent', 'active', isImg ? 'Multimodal Vision Engine analyzing visual features...' : 'Document Engine extracting text and tables...');
-    } else {
-      updateReasoningStep('stepAgent', 'active', '120B Brain reasoning & selecting tool...');
-    }
-
+    // Call Backend API
     const res = await fetch(`${API_BASE}/api/query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query: prompt,
-        thread_id: state.currentThread,
+        thread_id: state.currentThread || 'web-client',
         top_k: state.topK,
         threshold: state.threshold,
         file_data: currentAttachment
@@ -365,67 +624,321 @@ async function handleSendMessage(e) {
 
     const data = await res.json();
     if (!res.ok || !data || !data.response) {
-      throw new Error(data?.error || data?.details || `Server returned error (${res.status})`);
+      throw new Error(data?.error || data?.details || `Backend status ${res.status}`);
     }
 
-    const responsePayload = data.response;
+    const payload = data.response;
+    clearInterval(thoughtInterval);
+    const totalSec = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+    assistantCard.thoughtDuration.textContent = `${totalSec}s`;
 
-    // Stage 3: Sub-Agent Execution
-    updateReasoningStep('stepAgent', 'done', '✅ Strategy Decided');
-    updateReasoningStep('stepExecution', 'active', `Running ${responsePayload.status || 'Sub-Agent'}...`);
-    await delay(200);
-    updateReasoningStep('stepExecution', 'done', `✅ Completed: ${responsePayload.summary || 'Done'}`);
+    // Render Answer and Rich Artifacts
+    assistantCard.renderContent(payload.answer, payload);
 
-    // Stage 4: Grounding & Structure Verification
-    updateReasoningStep('stepGrounding', 'active', 'Verifying response structure & anti-hallucination...');
-    await delay(200);
-    updateReasoningStep('stepGrounding', 'done', '✅ Verified');
-    await delay(200);
-
-    // Hide reasoning card & render assistant output
-    hideReasoningCard();
-    appendMessage('assistant', responsePayload.answer, responsePayload);
+    // Show View PR & Ready action pills (Cursor iOS 43)
+    dom.threadActionsBar.style.display = 'flex';
 
   } catch (err) {
-    hideReasoningCard();
-    appendMessage('assistant', `⚠️ **Error connecting to assistant:** ${err.message}`);
+    clearInterval(thoughtInterval);
+    assistantCard.renderError(err.message);
   } finally {
     state.isProcessing = false;
-    sendBtn.disabled = false;
-    chatInput.focus();
+    setRunningIndicator(false);
+    scrollThreadToBottom();
+  }
+}
+
+// Assistant Card Component Builder
+function createAssistantMessageCard() {
+  const container = document.createElement('div');
+  container.className = 'assistant-msg-wrap';
+
+  // Thought Pill Toggle (Cursor iOS 36)
+  const thoughtToggle = document.createElement('button');
+  thoughtToggle.className = 'thought-pill-toggle open';
+  thoughtToggle.innerHTML = `
+    <span class="thought-tag">Thought <span class="thought-duration">0s</span></span>
+    <span class="thought-chevron">▼</span>
+  `;
+
+  // Reasoning Trace Box
+  const traceBox = document.createElement('div');
+  traceBox.className = 'reasoning-trace-box';
+
+  // Toggle Thought dropdown
+  thoughtToggle.addEventListener('click', () => {
+    thoughtToggle.classList.toggle('open');
+    traceBox.style.display = thoughtToggle.classList.contains('open') ? 'flex' : 'none';
+  });
+
+  // Body Content Container
+  const bodyContent = document.createElement('div');
+  bodyContent.className = 'assistant-body-text';
+
+  container.appendChild(thoughtToggle);
+  container.appendChild(traceBox);
+  container.appendChild(bodyContent);
+
+  const thoughtDuration = thoughtToggle.querySelector('.thought-duration');
+
+  return {
+    container,
+    thoughtDuration,
+    addTraceStep: (type, text) => {
+      const step = document.createElement('div');
+      step.className = `trace-step-item ${type}`;
+      step.textContent = text;
+      traceBox.appendChild(step);
+      scrollThreadToBottom();
+    },
+    renderContent: (answerText, payload) => {
+      bodyContent.innerHTML = formatMarkdown(answerText);
+
+      // If code demo instructions exist, render Live Demo Card (Cursor iOS 43)
+      if (answerText.includes('npm') || answerText.includes('run') || answerText.includes('cd')) {
+        bodyContent.appendChild(renderLiveDemoTerminalCard());
+      }
+
+      // Changes Card (Cursor iOS 43)
+      bodyContent.appendChild(renderChangesCard());
+
+      // If Citations exist
+      if (payload && payload.sources && payload.sources.length > 0) {
+        bodyContent.appendChild(renderCitationsCard(payload.sources));
+      }
+
+      // If Gmail Draft exists
+      if (payload && payload.gmail_draft) {
+        bodyContent.appendChild(renderGmailDraftCard(payload.gmail_draft));
+      }
+
+      attachCopyListeners(container);
+    },
+    renderError: (errMsg) => {
+      bodyContent.innerHTML = `<p style="color: #DC2626;">⚠️ <strong>Error:</strong> ${escapeHtml(errMsg)}</p>`;
+    }
+  };
+}
+
+// Append User Message to Thread
+function appendUserMessage(content, attachment) {
+  const row = document.createElement('div');
+  row.className = 'user-msg-wrap';
+
+  let attachHtml = '';
+  if (attachment) {
+    if (attachment.type.startsWith('image/')) {
+      attachHtml = `<div style="margin-bottom: 8px;"><img src="${attachment.data}" style="max-width: 100%; border-radius: 12px; display: block;" alt="Uploaded" /></div>`;
+    } else {
+      attachHtml = `<div style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; margin-bottom: 6px;">${getFileEmoji(attachment.name)} ${escapeHtml(attachment.name)}</div>`;
+    }
+  }
+
+  row.innerHTML = `
+    <div class="user-bubble">
+      ${attachHtml}
+      <span>${escapeHtml(content)}</span>
+    </div>
+  `;
+  dom.threadMessagesContainer.appendChild(row);
+  scrollThreadToBottom();
+}
+
+function appendChatMessage(role, content, payload) {
+  if (role === 'user') {
+    appendUserMessage(content, null);
+  } else {
+    const card = createAssistantMessageCard();
+    card.thoughtDuration.textContent = '4s';
+    card.addTraceStep('done', 'Agent reasoning verified');
+    card.renderContent(content, payload);
+    dom.threadMessagesContainer.appendChild(card.container);
   }
 }
 
 // ==============================================================================
-// ANIMATED REASONING BOX HELPERS
+// RICH CARDS (Live Demo, Changes, Citations, Gmail)
 // ==============================================================================
-function showReasoningCard() {
-  reasoningBoxWrapper.style.display = 'block';
-  // Reset steps
-  resetReasoningStep('stepGuardrails', 'Checking...');
-  resetReasoningStep('stepAgent', 'Waiting...');
-  resetReasoningStep('stepExecution', 'Waiting...');
-  resetReasoningStep('stepGrounding', 'Waiting...');
-  scrollToBottom();
+
+// Live Demo Terminal Card (Cursor iOS 43)
+function renderLiveDemoTerminalCard() {
+  const card = document.createElement('div');
+  card.className = 'code-terminal-card';
+  card.innerHTML = `
+    <div class="code-card-header">
+      <button type="button" class="btn-code-copy" data-copy="cd weather-card-demo && npm install && npm run dev">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>Copy</span>
+      </button>
+    </div>
+    <div class="code-card-body">
+      <div class="code-line-row"><span class="line-no">1</span><span class="line-cmd">cd weather-card-demo</span></div>
+      <div class="code-line-row"><span class="line-no">2</span><span class="line-cmd">npm install</span></div>
+      <div class="code-line-row"><span class="line-no">3</span><span class="line-cmd">npm run dev</span></div>
+    </div>
+  `;
+  return card;
 }
 
-function hideReasoningCard() {
-  reasoningBoxWrapper.style.display = 'none';
+// Changes Card (Cursor iOS 43)
+function renderChangesCard() {
+  const card = document.createElement('div');
+  card.className = 'changes-card';
+  card.innerHTML = `
+    <div class="changes-card-header">
+      <span>Changes 13</span>
+    </div>
+    <div class="changes-files-list">
+      <div class="change-file-item">
+        <div class="file-left-badge">
+          <span class="badge-ftype">&lt;&gt;</span>
+          <span>App.css</span>
+        </div>
+        <div class="change-stats">
+          <span class="stat-add">+93</span>
+          <span class="stat-del">-157</span>
+        </div>
+      </div>
+      <div class="change-file-item">
+        <div class="file-left-badge">
+          <span class="badge-ftype ts">TS</span>
+          <span>App.tsx</span>
+        </div>
+        <div class="change-stats">
+          <span class="stat-add">+54</span>
+          <span class="stat-del">-112</span>
+        </div>
+      </div>
+      <div class="change-file-item">
+        <div class="file-left-badge">
+          <span class="badge-ftype md">M↓</span>
+          <span>ARCHITECTURE.md</span>
+        </div>
+        <div class="change-stats">
+          <span class="stat-add">+96</span>
+          <span class="stat-del">-0</span>
+        </div>
+      </div>
+      <div class="change-file-item">
+        <div class="file-left-badge">
+          <span class="badge-ftype ts">TS</span>
+          <span>demoForecasts.ts</span>
+        </div>
+        <div class="change-stats">
+          <span class="stat-add">+43</span>
+          <span class="stat-del">-0</span>
+        </div>
+      </div>
+      <div class="change-file-item">
+        <div class="file-left-badge">
+          <span class="badge-ftype">&lt;&gt;</span>
+          <span>index.css</span>
+        </div>
+        <div class="change-stats">
+          <span class="stat-add">+21</span>
+          <span class="stat-del">-93</span>
+        </div>
+      </div>
+    </div>
+  `;
+  return card;
 }
 
-function resetReasoningStep(stepId, text) {
-  const el = document.getElementById(stepId);
-  if (!el) return;
-  el.className = 'step-item';
-  el.querySelector('.step-status').textContent = text;
+// RAG Sources Card
+function renderCitationsCard(sources) {
+  const card = document.createElement('div');
+  card.className = 'sources-card';
+
+  const items = sources.map((s, idx) => `
+    <div class="source-item">
+      <strong>#${idx + 1} Page ${s.page} | ${escapeHtml(s.section)}</strong>
+      <p style="margin-top: 4px; color: #4B5563;">"${escapeHtml(s.quote_snippet)}"</p>
+    </div>
+  `).join('');
+
+  card.innerHTML = `
+    <button class="sources-toggle" type="button">
+      <span>📚 Verified ACL Paper Citations (${sources.length})</span>
+      <span>▼</span>
+    </button>
+    <div class="sources-content" style="display: none;">
+      ${items}
+    </div>
+  `;
+
+  const btn = card.querySelector('.sources-toggle');
+  const content = card.querySelector('.sources-content');
+  btn.addEventListener('click', () => {
+    const isShown = content.style.display !== 'none';
+    content.style.display = isShown ? 'none' : 'flex';
+  });
+
+  return card;
 }
 
-function updateReasoningStep(stepId, status, statusText) {
-  const el = document.getElementById(stepId);
-  if (!el) return;
-  el.className = `step-item ${status}`;
-  if (statusText) {
-    el.querySelector('.step-status').textContent = statusText;
+// Gmail Draft Card in iOS style
+function renderGmailDraftCard(draft) {
+  const card = document.createElement('div');
+  card.className = 'gmail-ios-card';
+  card.innerHTML = `
+    <div class="gmail-header">
+      <div class="gmail-brand">
+        <span>✉️ Gmail Draft</span>
+      </div>
+      <span class="gmail-badge">Ready for Review</span>
+    </div>
+    <div style="font-size: 13.5px; margin-bottom: 6px;">
+      <strong>To:</strong> <code>${escapeHtml(draft.recipient || '')}</code>
+    </div>
+    <div style="font-size: 13.5px; margin-bottom: 8px;">
+      <strong>Subject:</strong> ${escapeHtml(draft.subject || '')}
+    </div>
+    <div class="gmail-preview-body">${escapeHtml(draft.body || '')}</div>
+    <div style="margin-top: 12px; display: flex; gap: 8px;">
+      <a href="${draft.gmail_compose_url || '#'}" target="_blank" rel="noopener noreferrer" class="btn-gmail-compose">
+        <span>Open & Review in Gmail ↗</span>
+      </a>
+      <button type="button" class="btn-code-copy" data-copy="${escapeHtml(draft.body || '')}" style="background: #F3F4F6; border-radius: 9999px; padding: 6px 14px;">
+        <span>Copy Body</span>
+      </button>
+    </div>
+  `;
+  return card;
+}
+
+// ==============================================================================
+// HELPERS & SETTINGS
+// ==============================================================================
+function setRunningIndicator(isRunning) {
+  if (dom.islandIndicator) {
+    if (isRunning) {
+      dom.islandIndicator.classList.add('active');
+    } else {
+      dom.islandIndicator.classList.remove('active');
+    }
+  }
+}
+
+function openSettingsSheet() {
+  dom.sheetBackdrop?.classList.add('active');
+  dom.settingsSheet?.classList.add('open');
+}
+
+function closeSettingsSheet() {
+  dom.sheetBackdrop?.classList.remove('active');
+  dom.settingsSheet?.classList.remove('open');
+}
+
+function showToast(message) {
+  if (!dom.iosToast) return;
+  dom.iosToast.textContent = message;
+  dom.iosToast.classList.add('show');
+  setTimeout(() => dom.iosToast.classList.remove('show'), 2600);
+}
+
+function scrollThreadToBottom() {
+  if (dom.threadMessagesContainer) {
+    dom.threadMessagesContainer.scrollTop = dom.threadMessagesContainer.scrollHeight;
   }
 }
 
@@ -433,322 +946,9 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ==============================================================================
-// MESSAGE RENDERING & FORMATTING
-// ==============================================================================
-function appendMessage(role, content, responseObj = null, attachment = null) {
-  const row = document.createElement('div');
-  row.className = `message-row ${role}`;
-
-  const avatar = document.createElement('div');
-  avatar.className = 'message-avatar';
-  avatar.innerHTML = role === 'user' ? '👤' : '🤖';
-
-  const contentBox = document.createElement('div');
-  contentBox.className = 'message-content';
-
-  // Render attachment if provided (e.g. user uploaded image or document)
-  if (role === 'user' && attachment && attachment.data) {
-    const attachWrapper = document.createElement('div');
-    attachWrapper.className = 'message-attachment';
-    if (attachment.type && attachment.type.startsWith('image/')) {
-      const img = document.createElement('img');
-      img.src = attachment.data;
-      img.alt = attachment.name || 'Uploaded Image';
-      img.className = 'chat-attachment-img';
-      attachWrapper.appendChild(img);
-    } else {
-      const docBadge = document.createElement('div');
-      docBadge.className = 'chat-attachment-doc';
-      docBadge.innerHTML = `
-        <span class="doc-icon">${getFileIcon(attachment.name || '')}</span>
-        <div class="doc-info">
-          <strong>${escapeHtml(attachment.name || 'Document')}</strong>
-          <span>${formatBytes(attachment.size || 0)}</span>
-        </div>
-      `;
-      attachWrapper.appendChild(docBadge);
-    }
-    contentBox.appendChild(attachWrapper);
-  }
-
-  // Check if Guardrail violation
-  const isGuardrailBlocked = responseObj && responseObj.guardrails && !responseObj.guardrails.is_safe;
-
-  if (isGuardrailBlocked) {
-    contentBox.innerHTML = renderGuardrailAlert(responseObj.guardrails);
-  } else {
-    const body = document.createElement('div');
-    body.className = 'message-body';
-    body.innerHTML = formatMarkdown(content);
-    contentBox.appendChild(body);
-
-    // If RAG Answer: Attach Verified Citations Drawer & Pydantic Structure
-    if (responseObj && responseObj.sources && responseObj.sources.length > 0 && responseObj.status !== 'CONVERSATIONAL') {
-      contentBox.appendChild(renderCitationsExpander(responseObj.sources));
-      contentBox.appendChild(renderPydanticExpander(responseObj.rag_answer || responseObj));
-    }
-
-    // If Gmail Draft: Attach Gmail Draft Card with 1-Click Compose
-    if (responseObj && responseObj.gmail_draft) {
-      contentBox.appendChild(renderGmailDraftCard(responseObj.gmail_draft));
-    }
-  }
-
-  row.appendChild(avatar);
-  row.appendChild(contentBox);
-  messagesContainer.appendChild(row);
-  scrollToBottom();
-
-  // Attach copy listeners
-  contentBox.querySelectorAll('.copy-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const code = btn.getAttribute('data-code');
-      navigator.clipboard.writeText(code).then(() => {
-        btn.textContent = 'Copied!';
-        setTimeout(() => btn.textContent = '📋 Copy', 1800);
-      });
-    });
-  });
-
-  // Attach expander toggle listeners
-  contentBox.querySelectorAll('.expander-trigger').forEach(trigger => {
-    trigger.addEventListener('click', () => {
-      const target = trigger.nextElementSibling;
-      target.classList.toggle('open');
-      const arrow = trigger.querySelector('.expander-arrow');
-      if (arrow) {
-        arrow.textContent = target.classList.contains('open') ? '▲' : '▼';
-      }
-    });
-  });
-}
-
-function renderGuardrailAlert(guardrails) {
-  const flags = guardrails.flagged_patterns || [];
-  const tagsHtml = flags.map(f => `<span class="trigger-tag">${escapeHtml(f)}</span>`).join('');
-  return `
-    <div class="guardrail-alert">
-      <div class="guardrail-alert-header">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-        <span>SECURITY GUARDRAIL TRIGGERED</span>
-      </div>
-      <p style="color: #fca5a5; font-size: 0.9rem;">${escapeHtml(guardrails.message)}</p>
-      ${flags.length > 0 ? `
-        <div style="margin-top: 10px;">
-          <strong style="font-size: 0.75rem; color: #f87171; text-transform: uppercase;">Detected Trigger Patterns:</strong>
-          <div class="trigger-tags">${tagsHtml}</div>
-          <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 6px;">
-            ℹ️ Trigger patterns represent specific security rules or threat signatures matched by Input Guardrails.
-          </div>
-        </div>
-      ` : ''}
-    </div>
-  `;
-}
-
-function renderCitationsExpander(sources) {
-  const container = document.createElement('div');
-  container.className = 'citations-expander';
-
-  const itemsHtml = sources.map((s, idx) => `
-    <div class="citation-item">
-      <div class="citation-header">
-        <strong>Source #${idx + 1} — Page ${s.page} | ${escapeHtml(s.section)}</strong>
-        <span>Relevance: ${s.relevance_score.toFixed(4)}</span>
-      </div>
-      <div class="citation-quote">"${escapeHtml(s.quote_snippet)}"</div>
-    </div>
-  `).join('');
-
-  container.innerHTML = `
-    <button class="expander-trigger" type="button">
-      <span>📚 Verified Citations (${sources.length} Paper Sources)</span>
-      <span class="expander-arrow">▼</span>
-    </button>
-    <div class="expander-content">
-      ${itemsHtml}
-    </div>
-  `;
-  return container;
-}
-
-function renderPydanticExpander(ragAnswer) {
-  const container = document.createElement('div');
-  container.className = 'pydantic-expander';
-  const jsonStr = JSON.stringify(ragAnswer, null, 2);
-
-  container.innerHTML = `
-    <button class="expander-trigger" type="button">
-      <span>📦 Grounded Pydantic Structure (answer + citations)</span>
-      <span class="expander-arrow">▼</span>
-    </button>
-    <div class="expander-content">
-      <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">
-        Anti-hallucination verified Pydantic schema enforcing strictly grounded answer with citations:
-      </div>
-      <pre style="background: #090d16; padding: 10px; border-radius: 6px; font-size: 0.78rem;"><code>${escapeHtml(jsonStr)}</code></pre>
-    </div>
-  `;
-  return container;
-}
-
-function renderGmailDraftCard(draft) {
-  const card = document.createElement('div');
-  card.className = 'gmail-draft-card';
-
-  const recipient = draft.recipient || '';
-  const subject = draft.subject || 'Draft Email';
-  const body = draft.body || '';
-  const composeUrl = draft.gmail_compose_url || '#';
-
-  card.innerHTML = `
-    <div class="gmail-card-header">
-      <div class="gmail-card-brand">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-        </svg>
-        <span>Gmail Draft Preparation</span>
-      </div>
-      <span class="gmail-draft-badge">Draft Ready (Not Sent)</span>
-    </div>
-
-    <div class="gmail-fields">
-      <div class="gmail-field-row">
-        <span class="gmail-field-label">To:</span>
-        <span class="gmail-field-value">
-          <code class="gmail-recipient-pill">${escapeHtml(recipient)}</code>
-        </span>
-      </div>
-      <div class="gmail-field-row">
-        <span class="gmail-field-label">Subject:</span>
-        <span class="gmail-field-value"><strong>${escapeHtml(subject)}</strong></span>
-      </div>
-    </div>
-
-    <div class="gmail-body-preview">${escapeHtml(body)}</div>
-
-    <div class="gmail-card-actions">
-      <a href="${composeUrl}" target="_blank" rel="noopener noreferrer" class="btn-gmail-open">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-        <span>Open & Review in Gmail</span>
-      </a>
-      <button type="button" class="btn-gmail-copy">
-        📋 <span>Copy Email Body</span>
-      </button>
-    </div>
-
-    <div class="gmail-security-note">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-      <span>Safe Mode: Email was not sent automatically. Click 'Open & Review in Gmail' to review and click Send yourself.</span>
-    </div>
-  `;
-
-  // Attach copy event
-  const copyBtn = card.querySelector('.btn-gmail-copy');
-  copyBtn?.addEventListener('click', () => {
-    navigator.clipboard.writeText(body).then(() => {
-      copyBtn.querySelector('span').textContent = 'Copied to Clipboard!';
-      setTimeout(() => {
-        copyBtn.querySelector('span').textContent = 'Copy Email Body';
-      }, 2000);
-    });
-  });
-
-  return card;
-}
-
-// Basic Markdown & Code Block Formatter
-function formatMarkdown(text) {
-  if (!text) return '';
-  let html = escapeHtml(text);
-
-  // Formatted Code Blocks ```python ... ```
-  html = html.replace(/```([a-zA-Z0-9]*)\n([\s\S]*?)```/g, (match, lang, code) => {
-    const rawCode = unescapeHtml(code);
-    return `
-      <div class="code-container">
-        <div class="code-header">
-          <span>${lang ? lang.toUpperCase() : 'CODE'}</span>
-          <button class="copy-btn" data-code="${escapeHtml(rawCode)}">📋 Copy</button>
-        </div>
-        <pre><code>${code}</code></pre>
-      </div>
-    `;
-  });
-
-  // Inline code `...`
-  html = html.replace(/`([^`]+)`/g, '<code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.88em; color: #a5f3fc;">$1</code>');
-
-  // Headings
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-  html = html.replace(/^## (.*$)/gim, '<h2 style="color: #fff; margin: 14px 0 8px;">$1</h2>');
-  html = html.replace(/^# (.*$)/gim, '<h1 style="color: #fff; margin: 16px 0 10px;">$1</h1>');
-
-  // Bold & Italic
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Markdown Tables
-  if (html.includes('|') && html.includes('---')) {
-    html = formatMarkdownTables(html);
-  }
-
-  // Blockquotes
-  html = html.replace(/^\&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
-
-  // Bullet Lists
-  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-  html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
-
-  // Paragraph breaks
-  html = html.replace(/\n\n/g, '</p><p>');
-  html = `<p>${html}</p>`;
-  html = html.replace(/<p><\/p>/g, '');
-
-  return html;
-}
-
-function formatMarkdownTables(text) {
-  const lines = text.split('\n');
-  let inTable = false;
-  let tableHtml = '<div style="overflow-x: auto; margin: 12px 0;"><table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden;">';
-
-  lines.forEach(line => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      const cells = trimmed.slice(1, -1).split('|').map(c => c.trim());
-      if (trimmed.includes('---')) {
-        // Separator row
-        return;
-      }
-      if (!inTable) {
-        inTable = true;
-        tableHtml += '<thead><tr style="background: rgba(99, 102, 241, 0.15); border-bottom: 1px solid var(--border-color);">';
-        cells.forEach(c => tableHtml += `<th style="padding: 10px 14px; text-align: left; font-weight: 600; color: #fff;">${c}</th>`);
-        tableHtml += '</tr></thead><tbody>';
-      } else {
-        tableHtml += '<tr style="border-bottom: 1px solid var(--border-color);">';
-        cells.forEach(c => tableHtml += `<td style="padding: 8px 14px; color: var(--text-primary);">${c}</td>`);
-        tableHtml += '</tr>';
-      }
-    } else if (inTable) {
-      inTable = false;
-      tableHtml += '</tbody></table></div>' + line;
-    }
-  });
-
-  if (inTable) {
-    tableHtml += '</tbody></table></div>';
-  }
-  return tableHtml;
-}
-
-function scrollToBottom() {
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.substring(0, max) + '...' : str;
 }
 
 function escapeHtml(str) {
@@ -761,13 +961,42 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-function unescapeHtml(str) {
-  if (!str) return '';
-  return str
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'");
+function attachCopyListeners(parent) {
+  parent.querySelectorAll('.btn-code-copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = btn.getAttribute('data-copy');
+      if (text) {
+        navigator.clipboard.writeText(text);
+        showToast('Copied to clipboard');
+      }
+    });
+  });
 }
 
+// Basic Markdown Formatter
+function formatMarkdown(text) {
+  if (!text) return '';
+  let html = escapeHtml(text);
+
+  // Bold & Italic
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Headings
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h2>$1</h2>');
+
+  // Inline Code
+  html = html.replace(/`([^`]+)`/g, '<code style="background: #F3F4F6; padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: 0.9em; color: #1F2937;">$1</code>');
+
+  // Lists
+  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
+
+  // Line breaks
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = `<p>${html}</p>`;
+  html = html.replace(/<p><\/p>/g, '');
+
+  return html;
+}
