@@ -2,613 +2,643 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cursor iOS - Autonomous Agent & Cloud Workspaces</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#F5F6FA">
+  <title>Baasha — Grounded AI Research Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="desktop-frame-mode">
+<body>
 
-  <!-- Desktop Presentation Controls (Visible on desktop / large screens) -->
-  <div class="presentation-bar">
-    <div class="presentation-left">
-      <div class="cursor-brand-mini">
-        <svg class="cursor-iso-icon" width="20" height="20" viewBox="0 0 32 32" fill="none">
-          <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#E4E4E7" stroke="#18181B" stroke-width="1.5" stroke-linejoin="round"/>
-          <polygon points="3,10.5 16,18 16,30 3,22.5" fill="#52525B" stroke="#18181B" stroke-width="1.5" stroke-linejoin="round"/>
-          <polygon points="16,18 29,10.5 29,22.5 16,30" fill="#18181B" stroke="#18181B" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>
-        <span>Cursor iOS Experience</span>
-      </div>
-      <span class="badge-live-env">Cloud Agent Active</span>
-    </div>
-    <div class="presentation-right">
-      <button id="btnToggleFrameMode" class="btn-mode-toggle" title="Toggle between iPhone Mockup and Full Width Desktop">
-        <span id="frameToggleIcon">📱</span>
-        <span id="frameToggleLabel">iPhone Frame View</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- ROOT CONTAINER -->
   <div class="app-root" id="appRoot">
-    
-    <!-- IPHONE DEVICE SHELL -->
-    <div class="device-frame" id="deviceFrame">
-      
-      <!-- iPhone Hardware Dynamic Island -->
-      <div class="dynamic-island" id="dynamicIsland">
-        <div class="island-camera"></div>
-        <div class="island-sensor"></div>
-        <div class="island-indicator" id="islandIndicator"></div>
-      </div>
 
-      <!-- iOS STATUS BAR -->
-      <div class="ios-status-bar" id="iosStatusBar">
-        <div class="status-time" id="statusClock">9:41</div>
-        <div class="status-icons">
-          <!-- Signal Icon -->
-          <svg class="icon-signal" width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
-            <rect x="0.5" y="8.5" width="2.5" height="3" rx="0.5"/>
-            <rect x="4.5" y="6" width="2.5" height="5.5" rx="0.5"/>
-            <rect x="8.5" y="3.5" width="2.5" height="8" rx="0.5"/>
-            <rect x="12.5" y="0.5" width="2.5" height="11" rx="0.5"/>
-          </svg>
-          <!-- Wifi Icon -->
-          <svg class="icon-wifi" width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
-            <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
-            <path d="M4.3 7.8a5.2 5.2 0 0 1 7.4 0 .8.8 0 0 0 1.1-1.1 6.8 6.8 0 0 0-9.6 0 .8.8 0 1 0 1.1 1.1z"/>
-            <path d="M1.5 5a9.2 9.2 0 0 1 13 0 .8.8 0 0 0 1.1-1.1 10.8 10.8 0 0 0-15.2 0 .8.8 0 0 0 1.1 1.1z"/>
-          </svg>
-          <!-- Battery Icon -->
-          <div class="battery-wrapper">
-            <div class="battery-shell">
-              <div class="battery-level"></div>
-            </div>
-            <div class="battery-nub"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- APP SCREEN CONTAINER (Hosts all 4 views) -->
-      <div class="screen-viewport" id="screenViewport">
-
-        <!-- ============================================================== -->
-        <!-- VIEW 1: WELCOME SCREEN (Cursor iOS 0.png)                      -->
-        <!-- ============================================================== -->
-        <section class="view-screen view-welcome" id="viewWelcome">
-          <div class="welcome-inner">
-            
-            <div class="welcome-center-content">
-              <!-- Cursor 3D Isometric Cube Logo -->
-              <div class="cursor-iso-logo-wrap">
-                <svg class="cursor-logo-big" width="56" height="56" viewBox="0 0 32 32" fill="none">
-                  <!-- Isometric Cube Facets -->
-                  <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#FFFFFF" stroke="#18181B" stroke-width="1.8" stroke-linejoin="round"/>
-                  <polygon points="3,10.5 16,18 16,30 3,22.5" fill="#4B5563" stroke="#18181B" stroke-width="1.8" stroke-linejoin="round"/>
-                  <polygon points="16,18 29,10.5 29,22.5 16,30" fill="#18181B" stroke="#18181B" stroke-width="1.8" stroke-linejoin="round"/>
-                  <!-- Inner accent corner line -->
-                  <line x1="16" y1="18" x2="16" y2="10.5" stroke="#FFFFFF" stroke-width="1.2" opacity="0.6"/>
-                </svg>
-              </div>
-
-              <h1 class="welcome-headline">Welcome to Cursor</h1>
-              <p class="welcome-subline">The new way to build software</p>
-
-              <!-- Session / Workspace Identifier Input -->
-              <form id="welcomeAuthForm" class="welcome-form">
-                <div class="welcome-input-card">
-                  <div class="welcome-input-label">Workspace / Session ID</div>
-                  <input 
-                    type="text" 
-                    id="welcomeThreadInput" 
-                    class="welcome-text-input" 
-                    placeholder="e.g. deepan, web-client, dev-1" 
-                    required 
-                    autocomplete="off"
-                  />
-                </div>
-
-                <button type="submit" id="btnWelcomeContinue" class="btn-black-pill">
-                  Continue
-                </button>
-              </form>
-
-              <p class="welcome-legal">
-                By creating an account, you agree to the<br>
-                <a href="#" class="legal-link" id="linkTos">Terms of Service</a> and <a href="#" class="legal-link" id="linkPrivacy">Privacy Policy</a>
-              </p>
-            </div>
-
-          </div>
-        </section>
-
-        <!-- ============================================================== -->
-        <!-- VIEW 2: ALL AGENTS SCREEN (Cursor iOS 21.png)                  -->
-        <!-- ============================================================== -->
-        <section class="view-screen view-all-agents" id="viewAllAgents" style="display: none;">
-          
-          <!-- Top Navigation Header -->
-          <header class="ios-nav-header">
-            <button id="btnAgentsBackToWelcome" class="btn-circle-nav" title="Switch Account / Logout">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <div class="nav-center-blank"></div>
-            <button id="btnAgentsMenu" class="btn-circle-nav" title="Open Settings & Subsystems">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="7" x2="20" y2="7"></line>
-                <line x1="4" y1="12" x2="20" y2="12"></line>
-                <line x1="4" y1="17" x2="20" y2="17"></line>
-              </svg>
-            </button>
-          </header>
-
-          <div class="agents-scroll-body">
-            <!-- Large iOS Title -->
-            <h1 class="ios-large-title">All Agents</h1>
-
-            <!-- Workspace Card Container -->
-            <div class="all-agents-card">
-              <div class="workspace-item-row" id="workspaceItemRow">
-                <div class="ws-row-left">
-                  <!-- Folder icon -->
-                  <svg class="ws-folder-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  <span class="ws-name" id="currentWorkspaceName">web-client</span>
-                </div>
-                <div class="ws-row-right">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Connect Source Control Section -->
-            <div class="source-control-section">
-              <h2 class="section-heading">Connect Source Control</h2>
-              <p class="section-desc">Connect a source control provider to run Cloud Agents on your repos</p>
-              
-              <button id="btnConnectSourceControl" class="btn-connect-pill">
-                <span id="connectBtnText">Connect</span>
-              </button>
-            </div>
-
-            <!-- Recent Agent Templates / Quick Sparks -->
-            <div class="quick-sparks-section">
-              <h3 class="quick-sparks-heading">Try an Agent Prompt</h3>
-              <div class="sparks-list">
-                <button class="spark-chip" data-prompt="Plan out a simple animated Weather Card component for a React web app. Outline the step-by-step architecture, NPM packages needed, and generate a visual preview demo of the component.">
-                  <span class="spark-icon">☀️</span>
-                  <span>Animated Weather Card Demo</span>
-                </button>
-                <button class="spark-chip" data-prompt="Draft a professional release notes email to engineering leadership regarding Baasha Agent v2 deployment.">
-                  <span class="spark-icon">✉️</span>
-                  <span>Draft Release Notes Email</span>
-                </button>
-                <button class="spark-chip" data-prompt="What is the current live weather and temperature across Chennai and Coimbatore?">
-                  <span class="spark-icon">🌦️</span>
-                  <span>Tamil Nadu Live Weather</span>
-                </button>
-                <button class="spark-chip" data-prompt="Run Python code to calculate the first 25 Fibonacci numbers and benchmark execution time.">
-                  <span class="spark-icon">⚡</span>
-                  <span>Run Python Sandbox Script</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom Floating Pill Input Bar (Cursor iOS 21 style) -->
-          <div class="floating-input-container">
-            <form id="homeInputForm" class="floating-input-pill">
-              <button type="button" class="pill-btn-icon pill-btn-plus" id="homeAttachBtn" title="Attach file or image">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
-
-              <input 
-                type="text" 
-                id="homeInputText" 
-                class="pill-input-field" 
-                placeholder="Plan, ask, build..." 
-                autocomplete="off"
-              />
-
-              <button type="button" class="pill-btn-icon pill-btn-mic" id="homeMicBtn" title="Voice Input">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                  <line x1="12" y1="19" x2="12" y2="23"></line>
-                  <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-              </button>
-            </form>
-          </div>
-
-        </section>
-
-        <!-- ============================================================== -->
-        <!-- VIEW 3: CHAT / AGENT THREAD (Cursor iOS 36 (1).png & 43.png)   -->
-        <!-- ============================================================== -->
-        <section class="view-screen view-thread" id="viewThread" style="display: none;">
-          
-          <!-- Top Navigation Header -->
-          <header class="ios-nav-header thread-header">
-            <button id="btnThreadBackToAgents" class="btn-circle-nav" title="Back to All Agents">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            
-            <div class="nav-thread-title-wrap">
-              <span class="nav-thread-title" id="displayActiveThreadTitle">Animated weather card compo...</span>
-            </div>
-
-            <button id="btnThreadMore" class="btn-circle-nav" title="Options">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2.2"></circle>
-                <circle cx="12" cy="12" r="2.2"></circle>
-                <circle cx="19" cy="12" r="2.2"></circle>
-              </svg>
-            </button>
-          </header>
-
-          <!-- Chat Stream Messages Container -->
-          <div class="thread-messages-scroll" id="threadMessagesContainer">
-            <!-- Messages, thoughts, code blocks, changes cards will be injected here -->
-          </div>
-
-          <!-- Bottom Action Pills Bar (e.g. View PR, Mark Ready) -->
-          <div class="thread-actions-bar" id="threadActionsBar" style="display: none;">
-            <button id="btnOpenPRView" class="pill-action-btn pill-btn-pr" title="View PR and Live Demo">
-              <!-- Git PR Icon -->
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="18" r="3"></circle>
-                <circle cx="6" cy="6" r="3"></circle>
-                <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
-                <line x1="6" y1="9" x2="6" y2="21"></line>
-              </svg>
-              <span>View PR</span>
-              <span class="pr-diff-stats" id="actionPillDiffStats">+2,333 -1</span>
-            </button>
-
-            <button id="btnMarkReady" class="pill-action-btn pill-btn-ready" title="Mark Task as Ready">
-              <span id="markReadyLabel">Mark Ready</span>
-            </button>
-          </div>
-
-          <!-- Floating Bottom Follow-up Input Bar -->
-          <div class="floating-input-container">
-            <!-- Attachment Thumbnail Tag (Shown when file is selected) -->
-            <div id="threadAttachmentPreview" class="thread-attachment-preview" style="display: none;">
-              <div class="attachment-chip">
-                <span id="attachChipIcon">📎</span>
-                <img id="attachChipImg" style="display: none;" alt="Preview" />
-                <span id="attachChipName" class="attach-chip-name">document.pdf</span>
-                <button type="button" id="btnRemoveAttachment" class="btn-chip-remove">&times;</button>
-              </div>
-            </div>
-
-            <form id="threadInputForm" class="floating-input-pill">
-              <!-- Hidden Native File Input -->
-              <input 
-                type="file" 
-                id="threadFileInput" 
-                accept=".pdf,.txt,.md,.json,.csv,.py,.docx,image/*" 
-                style="display: none;" 
-              />
-
-              <button type="button" class="pill-btn-icon pill-btn-plus" id="threadAttachBtn" title="Add context, image or document">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
-
-              <textarea 
-                id="threadChatInput" 
-                class="pill-input-field pill-textarea" 
-                placeholder="Follow up..." 
-                rows="1"
-                autocomplete="off"
-              ></textarea>
-
-              <button type="button" class="pill-btn-icon pill-btn-mic" id="threadMicBtn" title="Voice dictation">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                  <line x1="12" y1="19" x2="12" y2="23"></line>
-                  <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-              </button>
-
-              <!-- Black Circular Stop / Send Button (matches Cursor iOS 36 (1).png) -->
-              <button type="submit" class="pill-btn-submit" id="threadSendBtn" title="Send or Stop">
-                <span class="btn-stop-icon" id="sendBtnIcon"></span>
-              </button>
-            </form>
-          </div>
-
-        </section>
-
-        <!-- ============================================================== -->
-        <!-- VIEW 4: PR & LIVE DEMO VIEW (Cursor iOS 106.png)               -->
-        <!-- ============================================================== -->
-        <section class="view-screen view-pr-demo" id="viewPR" style="display: none;">
-          
-          <!-- Top Navigation Header -->
-          <header class="ios-nav-header pr-header">
-            <button id="btnPRBackToThread" class="btn-circle-nav" title="Back to Thread">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-
-            <div class="nav-center-blank"></div>
-
-            <div class="pr-header-actions">
-              <button id="btnCopyPRLink" class="btn-circle-nav" title="Share PR Link">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                </svg>
-              </button>
-
-              <button id="btnPRMenu" class="btn-circle-nav" title="PR Options">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="5" cy="12" r="2.2"></circle>
-                  <circle cx="12" cy="12" r="2.2"></circle>
-                  <circle cx="19" cy="12" r="2.2"></circle>
-                </svg>
-              </button>
-            </div>
-          </header>
-
-          <div class="pr-scroll-body">
-            
-            <!-- PR Title & Metadata Header -->
-            <div class="pr-meta-block">
-              <h1 class="pr-main-title" id="prMainTitle">Animated Weather Card demo + architecture plan <span class="pr-number">#1</span></h1>
-              
-              <div class="pr-status-row">
-                <span class="badge-pr-open" id="prStatusBadge">Open</span>
-                <span class="pr-stats-text">
-                  <span class="text-green">+2,333</span> <span class="text-red">-1</span> · 24 Files · 1 Commit
-                </span>
-              </div>
-            </div>
-
-            <!-- Ready to Merge Card -->
-            <div class="pr-merge-card">
-              <div class="merge-card-title">Ready to Merge</div>
-              <button id="btnSquashAndMerge" class="btn-squash-merge">
-                <span id="squashMergeLabel">Squash & Merge</span>
-              </button>
-            </div>
-
-            <!-- DEMOS SECTION (Cursor iOS 106) -->
-            <div class="pr-demos-section">
-              <h3 class="pr-section-heading">Demos</h3>
-
-              <div class="demo-card-backdrop" id="demoCardBackdrop">
-                <!-- Background Scenic Fog & Clouds -->
-                <div class="scenic-backdrop-layer">
-                  <div class="bridge-silhouette"></div>
-                  <div class="fog-layer"></div>
-                </div>
-
-                <!-- Floating Live Weather Card Component -->
-                <div class="weather-demo-card" id="weatherDemoCard">
-                  <div class="sun-orb-glow" id="sunOrbGlow"></div>
-                  
-                  <div class="weather-card-content">
-                    <div class="weather-temp-display" id="demoTempDisplay">72°</div>
-                    <div class="weather-location-name" id="demoLocationName">San Francisco</div>
-                    <div class="weather-condition-label" id="demoConditionLabel">Partly Cloudy</div>
-                  </div>
-
-                  <div class="cloud-drift-wrap">
-                    <div class="cumulus-cloud cloud-1"></div>
-                    <div class="cumulus-cloud cloud-2"></div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Live Demo Interactive Condition Switcher -->
-              <div class="demo-interactive-switcher">
-                <button class="demo-switch-pill active" data-condition="cloudy" data-temp="72°" data-city="San Francisco" data-label="Partly Cloudy">
-                  ⛅ Partly Cloudy
-                </button>
-                <button class="demo-switch-pill" data-condition="sunny" data-temp="86°" data-city="Chennai" data-label="Clear & Sunny">
-                  ☀️ Sunny
-                </button>
-                <button class="demo-switch-pill" data-condition="rainy" data-temp="58°" data-city="Ooty" data-label="Rain Showers">
-                  🌧️ Rainy
-                </button>
-                <button class="demo-switch-pill" data-condition="storm" data-temp="64°" data-city="Coimbatore" data-label="Thunderstorm">
-                  ⚡ Storm
-                </button>
-              </div>
-            </div>
-
-            <!-- 24 FILES SECTION -->
-            <div class="pr-files-section">
-              <h3 class="pr-section-heading">24 Files</h3>
-
-              <div class="files-list-card">
-                <div class="file-diff-row" data-filename="README.md">
-                  <div class="file-row-left">
-                    <span class="file-chevron">›</span>
-                    <span class="file-name-bold">README.md</span>
-                  </div>
-                  <div class="file-row-right">
-                    <span class="diff-add">+26</span>
-                    <span class="diff-del">-1</span>
-                  </div>
-                </div>
-
-                <div class="file-diff-row" data-filename=".gitignore">
-                  <div class="file-row-left">
-                    <span class="file-chevron">›</span>
-                    <span class="file-name-bold">.gitignore</span>
-                    <span class="file-subpath">weather-card-demo</span>
-                  </div>
-                  <div class="file-row-right">
-                    <span class="diff-add">+24</span>
-                    <span class="diff-del">-0</span>
-                  </div>
-                </div>
-
-                <div class="file-diff-row" data-filename=".oxlintrc.json">
-                  <div class="file-row-left">
-                    <span class="file-chevron">›</span>
-                    <span class="file-name-bold">.oxlintrc.json</span>
-                    <span class="file-subpath">weather-card-demo</span>
-                  </div>
-                  <div class="file-row-right">
-                    <span class="diff-add">+8</span>
-                    <span class="diff-del">-0</span>
-                  </div>
-                </div>
-
-                <div class="file-diff-row" data-filename="App.tsx">
-                  <div class="file-row-left">
-                    <span class="file-chevron">›</span>
-                    <span class="file-name-bold">App.tsx</span>
-                    <span class="file-subpath">src</span>
-                  </div>
-                  <div class="file-row-right">
-                    <span class="diff-add">+54</span>
-                    <span class="diff-del">-112</span>
-                  </div>
-                </div>
-
-                <div class="file-diff-row" data-filename="App.css">
-                  <div class="file-row-left">
-                    <span class="file-chevron">›</span>
-                    <span class="file-name-bold">App.css</span>
-                    <span class="file-subpath">src</span>
-                  </div>
-                  <div class="file-row-right">
-                    <span class="diff-add">+93</span>
-                    <span class="diff-del">-157</span>
-                  </div>
-                </div>
-
-                <div class="file-diff-row" data-filename="ARCHITECTURE.md">
-                  <div class="file-row-left">
-                    <span class="file-chevron">›</span>
-                    <span class="file-name-bold">ARCHITECTURE.md</span>
-                  </div>
-                  <div class="file-row-right">
-                    <span class="diff-add">+96</span>
-                    <span class="diff-del">-0</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-        </section>
-
-      </div> <!-- /screen-viewport -->
-
-      <!-- ============================================================== -->
-      <!-- BOTTOM BRANDING FOOTER (Curated by Mobbin / Cursor)            -->
-      <!-- ============================================================== -->
-      <footer class="cursor-mobbin-footer">
-        <div class="mobbin-left">
-          <svg class="cursor-mini-cube" width="16" height="16" viewBox="0 0 32 32" fill="none">
-            <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#FFFFFF" stroke="#18181B" stroke-width="1.8"/>
-            <polygon points="3,10.5 16,18 16,30 3,22.5" fill="#71717A" stroke="#18181B" stroke-width="1.8"/>
-            <polygon points="16,18 29,10.5 29,22.5 16,30" fill="#18181B" stroke="#18181B" stroke-width="1.8"/>
-          </svg>
-          <span class="brand-name">Cursor</span>
-        </div>
-        <div class="mobbin-right">
-          <span class="curated-text">curated by</span>
-          <span class="mobbin-logo">
-            <svg width="78" height="15" viewBox="0 0 85 16" fill="currentColor">
-              <path d="M0 14V2h3.2l3.4 8.5L10 2h3.2v12H10.5V6.2L7.3 14H6.1L2.8 6.2V14H0zm18.2-3.8c0-2.4 1.7-4.2 4.1-4.2s4.1 1.8 4.1 4.2-1.7 4.2-4.1 4.2-4.1-1.8-4.1-4.2zm5.7 0c0-1.2-.7-2-1.6-2s-1.6.8-1.6 2 .7 2 1.6 2 1.6-.8 1.6-2zm8.5 3.8V2h2.5v4.5c.6-.8 1.6-1.2 2.6-1.2 2.1 0 3.7 1.8 3.7 4.2s-1.6 4.2-3.7 4.2c-1 0-2-.4-2.6-1.2V14h-2.5zm5-3.8c0-1.2-.7-2-1.6-2s-1.6.8-1.6 2 .7 2 1.6 2 1.6-.8 1.6-2zm8.6 3.8V2h2.5v4.5c.6-.8 1.6-1.2 2.6-1.2 2.1 0 3.7 1.8 3.7 4.2s-1.6 4.2-3.7 4.2c-1 0-2-.4-2.6-1.2V14h-2.5zm5-3.8c0-1.2-.7-2-1.6-2s-1.6.8-1.6 2 .7 2 1.6 2 1.6-.8 1.6-2zm9.1 3.8V6h2.5v8h-2.5zm1.2-9.6c-.8 0-1.4-.6-1.4-1.4s.6-1.4 1.4-1.4 1.4.6 1.4 1.4-.6 1.4-1.4 1.4zm6.6 9.6V6h2.4v1.1c.5-.7 1.4-1.2 2.4-1.2 1.9 0 3.2 1.4 3.2 3.5V14h-2.5V9.6c0-1-.6-1.6-1.5-1.6-.9 0-1.5.6-1.5 1.6V14h-2.5z"/>
+    <!-- ============================================================== -->
+    <!-- VIEW 1: WELCOME / SESSION START                                -->
+    <!-- ============================================================== -->
+    <section class="view-screen view-welcome" id="viewWelcome">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+              <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#FFFFFF" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
+              <polygon points="3,10.5 16,18 16,30 3,22.5" fill="rgba(255,255,255,.55)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
+              <polygon points="16,18 29,10.5 29,22.5 16,30" fill="rgba(255,255,255,.3)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
             </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">Baasha</span>
+            <span class="brand-subtitle">Grounded RAG</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span class="status-pill"><span class="status-dot"></span>Agent online</span>
+        </div>
+      </header>
+
+      <div class="welcome-layout">
+        <div class="welcome-hero">
+          <span class="eyebrow"><span class="eyebrow-line"></span>Research intelligence, grounded</span>
+          <h1 class="welcome-headline">Ask better questions.<br>Get <em>verifiable</em> answers.</h1>
+          <p class="welcome-lede">
+            A retrieval-augmented workspace that cites its sources, runs live tools,
+            and keeps every session's memory private and isolated.
+          </p>
+
+          <ul class="hero-feature-list">
+            <li>
+              <span class="feature-check">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              <span><strong>Verified citations</strong> — every claim traced to a page and section.</span>
+            </li>
+            <li>
+              <span class="feature-check">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              <span><strong>Live tools</strong> — weather, news, Python sandbox and Gmail drafts.</span>
+            </li>
+            <li>
+              <span class="feature-check">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              <span><strong>Isolated memory</strong> — one private thread per workspace.</span>
+            </li>
+          </ul>
+
+          <div class="hero-proof">
+            <div class="proof-avatars">
+              <span class="proof-avatar">AI</span>
+              <span class="proof-avatar">RAG</span>
+              <span class="proof-avatar">LLM</span>
+            </div>
+            <span class="proof-text">Guardrails, grounding and anti-hallucination built in.</span>
+          </div>
+        </div>
+
+        <div class="welcome-card">
+          <div class="welcome-card-glow"></div>
+          <div class="welcome-card-head">
+            <h2>Start a session</h2>
+            <p>Give your workspace a name. Your conversation history stays tied to it.</p>
+          </div>
+
+          <form id="welcomeAuthForm" class="welcome-form">
+            <div class="field-group">
+              <label class="field-label" for="welcomeThreadInput">Workspace / Session ID</label>
+              <div class="welcome-input-card">
+                <span class="input-leading">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                </span>
+                <input
+                  type="text"
+                  id="welcomeThreadInput"
+                  class="welcome-text-input"
+                  placeholder="e.g. deepan, web-client, dev-1"
+                  required
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+
+            <button type="submit" id="btnWelcomeContinue" class="btn-black-pill">
+              <span>Continue to workspace</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+          </form>
+
+          <div class="welcome-card-foot">
+            <span class="secure-note">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              Private by design
+            </span>
+            <p class="welcome-legal">
+              By continuing you agree to the
+              <a href="#" class="legal-link" id="linkTos">Terms of Service</a> and
+              <a href="#" class="legal-link" id="linkPrivacy">Privacy Policy</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2: WORKSPACE OVERVIEW / ALL AGENTS                        -->
+    <!-- ============================================================== -->
+    <section class="view-screen view-all-agents" id="viewAllAgents" style="display: none;">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="btnAgentsBackToWelcome" class="icon-btn" title="Switch account / start another session" aria-label="Back to welcome">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <div class="brand">
+            <div class="brand-mark">
+              <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#FFFFFF" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
+                <polygon points="3,10.5 16,18 16,30 3,22.5" fill="rgba(255,255,255,.55)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
+                <polygon points="16,18 29,10.5 29,22.5 16,30" fill="rgba(255,255,255,.3)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="brand-text">
+              <span class="brand-title">Baasha</span>
+              <span class="brand-subtitle">Grounded RAG</span>
+            </div>
+          </div>
+          <span class="topbar-divider"></span>
+          <span class="context-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+            Workspace overview
           </span>
         </div>
-      </footer>
+        <div class="topbar-actions">
+          <span class="status-pill"><span class="status-dot"></span>Memory active</span>
+          <button id="btnAgentsMenu" class="icon-btn" title="Open settings" aria-label="Open settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line><circle cx="9" cy="6" r="2" fill="var(--surface)"></circle><circle cx="15" cy="12" r="2" fill="var(--surface)"></circle><circle cx="9" cy="18" r="2" fill="var(--surface)"></circle></svg>
+          </button>
+        </div>
+      </header>
 
-      <!-- Home Indicator Bar -->
-      <div class="ios-home-indicator"></div>
+      <div class="page-scroll agents-scroll-body">
+        <div class="page-container">
 
-    </div> <!-- /device-frame -->
+          <div class="agents-hero">
+            <div class="agents-hero-copy">
+              <span class="eyebrow"><span class="eyebrow-line"></span>Your cloud workspace</span>
+              <h1 class="ios-large-title">All Agents</h1>
+              <p class="agents-hero-sub">One session, a full toolkit. Pick a starting point or ask anything below.</p>
+            </div>
+            <div class="agents-hero-stat">
+              <span class="stat-kicker">Session</span>
+              <span class="stat-value">01</span>
+            </div>
+          </div>
 
-  </div> <!-- /app-root -->
+          <div class="overview-grid">
+            <!-- Active workspace -->
+            <div class="panel workspace-panel">
+              <div class="panel-head">
+                <div>
+                  <div class="panel-kicker">Active workspace</div>
+                  <h2 class="panel-title">Session memory</h2>
+                </div>
+                <span class="live-chip"><span class="dot-green"></span>Live</span>
+              </div>
+
+              <div class="workspace-item-row" id="workspaceItemRow" title="Open this workspace thread">
+                <div class="ws-row-left">
+                  <span class="ws-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  </span>
+                  <span class="ws-copy">
+                    <span class="ws-name" id="currentWorkspaceName">web-client</span>
+                    <span class="ws-meta">Private thread · ready to chat</span>
+                  </span>
+                </div>
+                <div class="ws-row-right">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+              </div>
+
+              <div class="workspace-meta">
+                <span class="meta-pill">RAG top-K 4</span>
+                <span class="meta-pill">Groq 120B</span>
+                <span class="meta-pill">Isolated history</span>
+              </div>
+            </div>
+
+            <!-- Source control -->
+            <div class="panel source-control-section">
+              <div class="panel-head">
+                <div>
+                  <div class="panel-kicker">Integrations</div>
+                  <h2 class="panel-title section-heading">Connect Source Control</h2>
+                </div>
+                <span class="ghost-badge">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.3 11.3 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+                </span>
+              </div>
+              <p class="section-desc">Connect a source control provider to run cloud agents on your repositories.</p>
+              <button id="btnConnectSourceControl" class="btn-connect-pill">
+                <span id="connectBtnText">Connect</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick prompts -->
+          <div class="quick-sparks-section">
+            <div class="section-head-row">
+              <h3 class="quick-sparks-heading">Try an agent prompt</h3>
+              <span class="section-hint">Tap a card to start instantly</span>
+            </div>
+
+            <div class="sparks-list">
+              <button class="spark-chip" data-prompt="Plan out a simple animated Weather Card component for a React web app. Outline the step-by-step architecture, NPM packages needed, and generate a visual preview demo of the component.">
+                <span class="spark-icon">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+                </span>
+                <span class="spark-copy">
+                  <strong>Animated Weather Card</strong>
+                  <small>Plan the architecture, packages and a visual demo</small>
+                </span>
+                <span class="spark-arrow">→</span>
+              </button>
+
+              <button class="spark-chip" data-prompt="Draft a professional release notes email to engineering leadership regarding Baasha Agent v2 deployment.">
+                <span class="spark-icon">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 6-10 7L2 6"></path></svg>
+                </span>
+                <span class="spark-copy">
+                  <strong>Draft Release Notes</strong>
+                  <small>Write a polished email to engineering leadership</small>
+                </span>
+                <span class="spark-arrow">→</span>
+              </button>
+
+              <button class="spark-chip" data-prompt="What is the current live weather and temperature across Chennai and Coimbatore?">
+                <span class="spark-icon">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 12 4 4 0 0 0 6 19.9"></path><path d="M8 22v-1M12 22v-2M16 22v-1"></path></svg>
+                </span>
+                <span class="spark-copy">
+                  <strong>Tamil Nadu Live Weather</strong>
+                  <small>Real-time conditions across Chennai and Coimbatore</small>
+                </span>
+                <span class="spark-arrow">→</span>
+              </button>
+
+              <button class="spark-chip" data-prompt="Run Python code to calculate the first 25 Fibonacci numbers and benchmark execution time.">
+                <span class="spark-icon">
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 2 12 8 18"></polyline><polyline points="16 6 22 12 16 18"></polyline></svg>
+                </span>
+                <span class="spark-copy">
+                  <strong>Run Python Sandbox</strong>
+                  <small>Compute Fibonacci numbers and benchmark speed</small>
+                </span>
+                <span class="spark-arrow">→</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Composer -->
+      <div class="floating-input-container">
+        <form id="homeInputForm" class="floating-input-pill">
+          <button type="button" class="pill-btn-icon pill-btn-plus" id="homeAttachBtn" title="Attach file or image" aria-label="Attach file">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+
+          <input
+            type="text"
+            id="homeInputText"
+            class="pill-input-field"
+            placeholder="Plan, ask or build something…"
+            autocomplete="off"
+          />
+
+          <button type="button" class="pill-btn-icon pill-btn-mic" id="homeMicBtn" title="Voice input" aria-label="Voice input">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+
+          <button type="submit" class="pill-btn-submit" title="Send message" aria-label="Send message">
+            <span class="btn-send-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            </span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 3: CHAT / AGENT THREAD                                    -->
+    <!-- ============================================================== -->
+    <section class="view-screen view-thread" id="viewThread" style="display: none;">
+      <header class="topbar thread-header">
+        <div class="topbar-left">
+          <button id="btnThreadBackToAgents" class="icon-btn" title="Back to workspace" aria-label="Back to workspace">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <div class="thread-title-wrap">
+            <span class="nav-thread-title" id="displayActiveThreadTitle">web-client · agent</span>
+            <span class="thread-subtitle"><span class="status-dot"></span>Grounded agent · memory on</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span class="context-chip thread-context-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            Verified sources
+          </span>
+          <button id="btnThreadMore" class="icon-btn" title="Thread options" aria-label="Thread options">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="1.9"></circle>
+              <circle cx="12" cy="12" r="1.9"></circle>
+              <circle cx="19" cy="12" r="1.9"></circle>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="thread-messages-scroll" id="threadMessagesContainer">
+        <!-- Messages are injected here by app.js -->
+      </div>
+
+      <div class="thread-actions-bar" id="threadActionsBar" style="display: none;">
+        <button id="btnOpenPRView" class="pill-action-btn pill-btn-pr" title="View PR and live demo">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="18" r="3"></circle>
+            <circle cx="6" cy="6" r="3"></circle>
+            <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+            <line x1="6" y1="9" x2="6" y2="21"></line>
+          </svg>
+          <span>View PR</span>
+          <span class="pr-diff-stats" id="actionPillDiffStats">+2,333 −1</span>
+        </button>
+
+        <button id="btnMarkReady" class="pill-action-btn pill-btn-ready" title="Mark task as ready">
+          <span id="markReadyLabel">Mark Ready</span>
+        </button>
+      </div>
+
+      <div class="floating-input-container thread-composer">
+        <div id="threadAttachmentPreview" class="thread-attachment-preview" style="display: none;">
+          <div class="attachment-chip">
+            <span id="attachChipIcon">📎</span>
+            <img id="attachChipImg" style="display: none;" alt="Preview" />
+            <span id="attachChipName" class="attach-chip-name">document.pdf</span>
+            <button type="button" id="btnRemoveAttachment" class="btn-chip-remove" aria-label="Remove attachment">&times;</button>
+          </div>
+        </div>
+
+        <form id="threadInputForm" class="floating-input-pill">
+          <input
+            type="file"
+            id="threadFileInput"
+            accept=".pdf,.txt,.md,.json,.csv,.py,.docx,image/*"
+            style="display: none;"
+          />
+
+          <button type="button" class="pill-btn-icon pill-btn-plus" id="threadAttachBtn" title="Add context, image or document" aria-label="Attach file">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+
+          <textarea
+            id="threadChatInput"
+            class="pill-input-field pill-textarea"
+            placeholder="Ask a follow-up…"
+            rows="1"
+            autocomplete="off"
+          ></textarea>
+
+          <button type="button" class="pill-btn-icon pill-btn-mic" id="threadMicBtn" title="Voice dictation" aria-label="Voice dictation">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </button>
+
+          <button type="submit" class="pill-btn-submit" id="threadSendBtn" title="Send or stop" aria-label="Send message">
+            <span class="btn-stop-icon" id="sendBtnIcon"></span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 4: PR & LIVE DEMO                                         -->
+    <!-- ============================================================== -->
+    <section class="view-screen view-pr-demo" id="viewPR" style="display: none;">
+      <header class="topbar pr-header">
+        <div class="topbar-left">
+          <button id="btnPRBackToThread" class="icon-btn" title="Back to thread" aria-label="Back to thread">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <div class="thread-title-wrap">
+            <span class="nav-thread-title">Pull request</span>
+            <span class="thread-subtitle">Agent-generated changes · ready for review</span>
+          </div>
+        </div>
+        <div class="topbar-actions pr-header-actions">
+          <button id="btnCopyPRLink" class="icon-btn" title="Share PR link" aria-label="Share PR link">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+          </button>
+          <button id="btnPRMenu" class="icon-btn" title="PR options" aria-label="PR options">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="1.9"></circle>
+              <circle cx="12" cy="12" r="1.9"></circle>
+              <circle cx="19" cy="12" r="1.9"></circle>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="pr-scroll-body">
+        <div class="pr-inner">
+
+          <div class="pr-meta-block">
+            <h1 class="pr-main-title" id="prMainTitle">Animated Weather Card demo + architecture plan <span class="pr-number">#1</span></h1>
+            <div class="pr-status-row">
+              <span class="badge-pr-open" id="prStatusBadge">Open</span>
+              <span class="pr-stats-text">
+                <span class="text-green">+2,333</span> <span class="text-red">−1</span>
+                <span class="dot-separator">·</span> 24 Files
+                <span class="dot-separator">·</span> 1 Commit
+              </span>
+            </div>
+          </div>
+
+          <div class="pr-merge-card">
+            <div class="merge-copy">
+              <div class="merge-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
+              </div>
+              <div>
+                <div class="merge-card-title">Ready to Merge</div>
+                <div class="merge-card-sub">All checks passed · no conflicts detected</div>
+              </div>
+            </div>
+            <button id="btnSquashAndMerge" class="btn-squash-merge">
+              <span id="squashMergeLabel">Squash &amp; Merge</span>
+            </button>
+          </div>
+
+          <div class="pr-demos-section">
+            <div class="section-head-row">
+              <h3 class="pr-section-heading">Demos</h3>
+              <span class="section-hint">Live component preview</span>
+            </div>
+
+            <div class="demo-card-backdrop" id="demoCardBackdrop">
+              <div class="scenic-backdrop-layer">
+                <div class="bridge-silhouette"></div>
+                <div class="fog-layer"></div>
+              </div>
+
+              <div class="weather-demo-card" id="weatherDemoCard">
+                <div class="sun-orb-glow" id="sunOrbGlow"></div>
+
+                <div class="weather-card-content">
+                  <div class="weather-temp-display" id="demoTempDisplay">72°</div>
+                  <div class="weather-location-name" id="demoLocationName">San Francisco</div>
+                  <div class="weather-condition-label" id="demoConditionLabel">Partly Cloudy</div>
+                </div>
+
+                <div class="cloud-drift-wrap">
+                  <div class="cumulus-cloud cloud-1"></div>
+                  <div class="cumulus-cloud cloud-2"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="demo-interactive-switcher">
+              <button class="demo-switch-pill active" data-condition="cloudy" data-temp="72°" data-city="San Francisco" data-label="Partly Cloudy">⛅ Partly Cloudy</button>
+              <button class="demo-switch-pill" data-condition="sunny" data-temp="86°" data-city="Chennai" data-label="Clear &amp; Sunny">☀️ Sunny</button>
+              <button class="demo-switch-pill" data-condition="rainy" data-temp="58°" data-city="Ooty" data-label="Rain Showers">🌧️ Rainy</button>
+              <button class="demo-switch-pill" data-condition="storm" data-temp="64°" data-city="Coimbatore" data-label="Thunderstorm">⚡ Storm</button>
+            </div>
+          </div>
+
+          <div class="pr-files-section">
+            <div class="section-head-row">
+              <h3 class="pr-section-heading">24 Files</h3>
+              <span class="section-hint">Changed in this pull request</span>
+            </div>
+
+            <div class="files-list-card">
+              <div class="file-diff-row" data-filename="README.md">
+                <div class="file-row-left">
+                  <span class="file-chevron">›</span>
+                  <span class="file-name-bold">README.md</span>
+                </div>
+                <div class="file-row-right"><span class="diff-add">+26</span><span class="diff-del">−1</span></div>
+              </div>
+
+              <div class="file-diff-row" data-filename=".gitignore">
+                <div class="file-row-left">
+                  <span class="file-chevron">›</span>
+                  <span class="file-name-bold">.gitignore</span>
+                  <span class="file-subpath">weather-card-demo</span>
+                </div>
+                <div class="file-row-right"><span class="diff-add">+24</span><span class="diff-del">−0</span></div>
+              </div>
+
+              <div class="file-diff-row" data-filename=".oxlintrc.json">
+                <div class="file-row-left">
+                  <span class="file-chevron">›</span>
+                  <span class="file-name-bold">.oxlintrc.json</span>
+                  <span class="file-subpath">weather-card-demo</span>
+                </div>
+                <div class="file-row-right"><span class="diff-add">+8</span><span class="diff-del">−0</span></div>
+              </div>
+
+              <div class="file-diff-row" data-filename="App.tsx">
+                <div class="file-row-left">
+                  <span class="file-chevron">›</span>
+                  <span class="file-name-bold">App.tsx</span>
+                  <span class="file-subpath">src</span>
+                </div>
+                <div class="file-row-right"><span class="diff-add">+54</span><span class="diff-del">−112</span></div>
+              </div>
+
+              <div class="file-diff-row" data-filename="App.css">
+                <div class="file-row-left">
+                  <span class="file-chevron">›</span>
+                  <span class="file-name-bold">App.css</span>
+                  <span class="file-subpath">src</span>
+                </div>
+                <div class="file-row-right"><span class="diff-add">+93</span><span class="diff-del">−157</span></div>
+              </div>
+
+              <div class="file-diff-row" data-filename="ARCHITECTURE.md">
+                <div class="file-row-left">
+                  <span class="file-chevron">›</span>
+                  <span class="file-name-bold">ARCHITECTURE.md</span>
+                </div>
+                <div class="file-row-right"><span class="diff-add">+96</span><span class="diff-del">−0</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /app-root -->
 
   <!-- ============================================================== -->
-  <!-- DRAWER / SETTINGS MODAL SHEET (iOS Action Sheet style)         -->
+  <!-- SETTINGS DRAWER                                                -->
   <!-- ============================================================== -->
   <div class="sheet-backdrop" id="sheetBackdrop"></div>
   <aside class="ios-action-sheet" id="settingsSheet">
     <div class="sheet-grabber"></div>
 
     <div class="sheet-header">
-      <h3>Agent & Workspace Settings</h3>
-      <button id="btnCloseSheet" class="btn-sheet-close">&times;</button>
+      <div>
+        <span class="panel-kicker">Configuration</span>
+        <h3>Agent &amp; Workspace Settings</h3>
+      </div>
+      <button id="btnCloseSheet" class="btn-sheet-close" aria-label="Close settings">&times;</button>
     </div>
 
     <div class="sheet-body">
-      <!-- Session Card -->
       <div class="sheet-card">
         <div class="sheet-card-title">ACTIVE WORKSPACE</div>
         <div class="sheet-user-row">
           <div class="sheet-user-avatar" id="sheetAvatar">W</div>
           <div class="sheet-user-meta">
             <span class="sheet-user-id" id="sheetThreadName">web-client</span>
-            <span class="sheet-user-tag">Private Session Memory Active</span>
+            <span class="sheet-user-tag">Private session memory active</span>
           </div>
         </div>
       </div>
 
-      <!-- RAG Configuration Sliders -->
       <div class="sheet-card">
         <div class="sheet-card-title">RAG INTELLIGENCE TUNING</div>
         <div class="sheet-slider-group">
           <div class="sheet-slider-header">
-            <span>Top-K Citations</span>
+            <span>Top-K citations</span>
             <span class="slider-badge" id="sheetTopKVal">4</span>
           </div>
           <input type="range" id="sheetTopKSlider" min="1" max="8" value="4" step="1">
         </div>
-        <div class="sheet-slider-group" style="margin-top: 14px;">
+        <div class="sheet-slider-group" style="margin-top: 18px;">
           <div class="sheet-slider-header">
-            <span>Similarity Threshold</span>
+            <span>Similarity threshold</span>
             <span class="slider-badge" id="sheetThresholdVal">0.10</span>
           </div>
           <input type="range" id="sheetThresholdSlider" min="0.00" max="0.50" value="0.10" step="0.01">
         </div>
       </div>
 
-      <!-- Active Subsystems Telemetry -->
       <div class="sheet-card">
-        <div class="sheet-card-title">ACTIVE REAT & TOOL SUBSYSTEMS</div>
+        <div class="sheet-card-title">ACTIVE TOOL SUBSYSTEMS</div>
         <div class="subsystems-grid">
           <div class="subsystem-pill"><span class="dot-green"></span> Groq 120B Agent</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Gmail Draft Preparation</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Tamil Nadu Live Weather</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Tavily Live News Search</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Python Sandbox Exec</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Multimodal Vision & Docs</div>
+          <div class="subsystem-pill"><span class="dot-green"></span> Gmail Drafts</div>
+          <div class="subsystem-pill"><span class="dot-green"></span> TN Live Weather</div>
+          <div class="subsystem-pill"><span class="dot-green"></span> Tavily News</div>
+          <div class="subsystem-pill"><span class="dot-green"></span> Python Sandbox</div>
+          <div class="subsystem-pill"><span class="dot-green"></span> Vision &amp; Docs</div>
         </div>
       </div>
 
-      <!-- Actions -->
       <div class="sheet-actions">
         <button id="btnClearHistoryBtn" class="btn-sheet-action btn-danger-action">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -619,11 +649,10 @@
           <span>Switch Account / Logout</span>
         </button>
       </div>
-
     </div>
   </aside>
 
-  <!-- Notification Toast -->
+  <!-- Toast -->
   <div class="ios-toast" id="iosToast">Notification message</div>
 
   <script src="js/app.js"></script>
