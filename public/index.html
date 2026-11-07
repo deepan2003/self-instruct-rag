@@ -2,659 +2,331 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#F5F6FA">
-  <title>Baasha — Grounded AI Research Workspace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baasha Agent - Intelligent Autonomous Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- Background Glow Accents -->
+  <div class="bg-gradient-glow glow-1"></div>
+  <div class="bg-gradient-glow glow-2"></div>
 
-  <div class="app-root" id="appRoot">
-
-    <!-- ============================================================== -->
-    <!-- VIEW 1: WELCOME / SESSION START                                -->
-    <!-- ============================================================== -->
-    <section class="view-screen view-welcome" id="viewWelcome">
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-mark">
-            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-              <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#FFFFFF" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
-              <polygon points="3,10.5 16,18 16,30 3,22.5" fill="rgba(255,255,255,.55)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
-              <polygon points="16,18 29,10.5 29,22.5 16,30" fill="rgba(255,255,255,.3)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="brand-text">
-            <span class="brand-title">Baasha</span>
-            <span class="brand-subtitle">Grounded RAG</span>
-          </div>
-        </div>
-        <div class="topbar-actions">
-          <span class="status-pill"><span class="status-dot"></span>Agent online</span>
-        </div>
-      </header>
-
-      <div class="welcome-layout">
-        <div class="welcome-hero">
-          <span class="eyebrow"><span class="eyebrow-line"></span>Research intelligence, grounded</span>
-          <h1 class="welcome-headline">Ask better questions.<br>Get <em>verifiable</em> answers.</h1>
-          <p class="welcome-lede">
-            A retrieval-augmented workspace that cites its sources, runs live tools,
-            and keeps every session's memory private and isolated.
-          </p>
-
-          <ul class="hero-feature-list">
-            <li>
-              <span class="feature-check">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Verified citations</strong> — every claim traced to a page and section.</span>
-            </li>
-            <li>
-              <span class="feature-check">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Live tools</strong> — weather, news, Python sandbox and Gmail drafts.</span>
-            </li>
-            <li>
-              <span class="feature-check">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </span>
-              <span><strong>Isolated memory</strong> — one private thread per workspace.</span>
-            </li>
-          </ul>
-
-          <div class="hero-proof">
-            <div class="proof-avatars">
-              <span class="proof-avatar">AI</span>
-              <span class="proof-avatar">RAG</span>
-              <span class="proof-avatar">LLM</span>
-            </div>
-            <span class="proof-text">Guardrails, grounding and anti-hallucination built in.</span>
-          </div>
-        </div>
-
-        <div class="welcome-card">
-          <div class="welcome-card-glow"></div>
-          <div class="welcome-card-head">
-            <h2>Start a session</h2>
-            <p>Give your workspace a name. Your conversation history stays tied to it.</p>
-          </div>
-
-          <form id="welcomeAuthForm" class="welcome-form">
-            <div class="field-group">
-              <label class="field-label" for="welcomeThreadInput">Workspace / Session ID</label>
-              <div class="welcome-input-card">
-                <span class="input-leading">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                </span>
-                <input
-                  type="text"
-                  id="welcomeThreadInput"
-                  class="welcome-text-input"
-                  placeholder="e.g. deepan, web-client, dev-1"
-                  required
-                  autocomplete="off"
-                />
-              </div>
-            </div>
-
-            <button type="submit" id="btnWelcomeContinue" class="btn-black-pill">
-              <span>Continue to workspace</span>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-            </button>
-          </form>
-
-          <div class="welcome-card-foot">
-            <span class="secure-note">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-              Private by design
-            </span>
-            <p class="welcome-legal">
-              By continuing you agree to the
-              <a href="#" class="legal-link" id="linkTos">Terms of Service</a> and
-              <a href="#" class="legal-link" id="linkPrivacy">Privacy Policy</a>.
-            </p>
-          </div>
-        </div>
+  <!-- STARTUP / THREAD LOGIN MODAL -->
+  <div id="threadModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-badge">
+        <span class="badge-dot"></span>
+        <span>Private Session Gateway</span>
       </div>
-    </section>
+      <h2 class="modal-title">⚡ Welcome to Baasha Agent</h2>
+      <p class="modal-desc">
+        Enter your <strong>Username</strong> or <strong>ID</strong> to access your private workspace. 
+        Your conversation memory is strictly isolated to your own session and is never visible to anyone else.
+      </p>
 
-    <!-- ============================================================== -->
-    <!-- VIEW 2: WORKSPACE OVERVIEW / ALL AGENTS                        -->
-    <!-- ============================================================== -->
-    <section class="view-screen view-all-agents" id="viewAllAgents" style="display: none;">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button id="btnAgentsBackToWelcome" class="icon-btn" title="Switch account / start another session" aria-label="Back to welcome">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          </button>
-          <div class="brand">
-            <div class="brand-mark">
-              <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-                <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#FFFFFF" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
-                <polygon points="3,10.5 16,18 16,30 3,22.5" fill="rgba(255,255,255,.55)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
-                <polygon points="16,18 29,10.5 29,22.5 16,30" fill="rgba(255,255,255,.3)" stroke="rgba(255,255,255,.85)" stroke-width="1.4" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="brand-text">
-              <span class="brand-title">Baasha</span>
-              <span class="brand-subtitle">Grounded RAG</span>
-            </div>
-          </div>
-          <span class="topbar-divider"></span>
-          <span class="context-chip">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
-            Workspace overview
-          </span>
+      <form id="newThreadForm" class="modal-form">
+        <div class="input-group">
+          <label for="threadInput">Your Username / ID</label>
+          <input 
+            type="text" 
+            id="threadInput" 
+            placeholder="e.g. deepan, researcher1, user123" 
+            required 
+            autocomplete="off" 
+            autofocus
+          >
         </div>
-        <div class="topbar-actions">
-          <span class="status-pill"><span class="status-dot"></span>Memory active</span>
-          <button id="btnAgentsMenu" class="icon-btn" title="Open settings" aria-label="Open settings">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line><circle cx="9" cy="6" r="2" fill="var(--surface)"></circle><circle cx="15" cy="12" r="2" fill="var(--surface)"></circle><circle cx="9" cy="18" r="2" fill="var(--surface)"></circle></svg>
-          </button>
-        </div>
-      </header>
-
-      <div class="page-scroll agents-scroll-body">
-        <div class="page-container">
-
-          <div class="agents-hero">
-            <div class="agents-hero-copy">
-              <span class="eyebrow"><span class="eyebrow-line"></span>Your cloud workspace</span>
-              <h1 class="ios-large-title">All Agents</h1>
-              <p class="agents-hero-sub">One session, a full toolkit. Pick a starting point or ask anything below.</p>
-            </div>
-            <div class="agents-hero-stat">
-              <span class="stat-kicker">Session</span>
-              <span class="stat-value">01</span>
-            </div>
-          </div>
-
-          <div class="overview-grid">
-            <!-- Active workspace -->
-            <div class="panel workspace-panel">
-              <div class="panel-head">
-                <div>
-                  <div class="panel-kicker">Active workspace</div>
-                  <h2 class="panel-title">Session memory</h2>
-                </div>
-                <span class="live-chip"><span class="dot-green"></span>Live</span>
-              </div>
-
-              <div class="workspace-item-row" id="workspaceItemRow" title="Open this workspace thread">
-                <div class="ws-row-left">
-                  <span class="ws-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                  </span>
-                  <span class="ws-copy">
-                    <span class="ws-name" id="currentWorkspaceName">web-client</span>
-                    <span class="ws-meta">Private thread · ready to chat</span>
-                  </span>
-                </div>
-                <div class="ws-row-right">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </div>
-              </div>
-
-              <div class="workspace-meta">
-                <span class="meta-pill">RAG top-K 4</span>
-                <span class="meta-pill">Groq 120B</span>
-                <span class="meta-pill">Isolated history</span>
-              </div>
-            </div>
-
-            <!-- Source control -->
-            <div class="panel source-control-section">
-              <div class="panel-head">
-                <div>
-                  <div class="panel-kicker">Integrations</div>
-                  <h2 class="panel-title section-heading">Connect Source Control</h2>
-                </div>
-                <span class="ghost-badge">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.3 11.3 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
-                </span>
-              </div>
-              <p class="section-desc">Connect a source control provider to run cloud agents on your repositories.</p>
-              <button id="btnConnectSourceControl" class="btn-connect-pill">
-                <span id="connectBtnText">Connect</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick prompts -->
-          <div class="quick-sparks-section">
-            <div class="section-head-row">
-              <h3 class="quick-sparks-heading">Try an agent prompt</h3>
-              <span class="section-hint">Tap a card to start instantly</span>
-            </div>
-
-            <div class="sparks-list">
-              <button class="spark-chip" data-prompt="Plan out a simple animated Weather Card component for a React web app. Outline the step-by-step architecture, NPM packages needed, and generate a visual preview demo of the component.">
-                <span class="spark-icon">
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
-                </span>
-                <span class="spark-copy">
-                  <strong>Animated Weather Card</strong>
-                  <small>Plan the architecture, packages and a visual demo</small>
-                </span>
-                <span class="spark-arrow">→</span>
-              </button>
-
-              <button class="spark-chip" data-prompt="Draft a professional release notes email to engineering leadership regarding Baasha Agent v2 deployment.">
-                <span class="spark-icon">
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 6-10 7L2 6"></path></svg>
-                </span>
-                <span class="spark-copy">
-                  <strong>Draft Release Notes</strong>
-                  <small>Write a polished email to engineering leadership</small>
-                </span>
-                <span class="spark-arrow">→</span>
-              </button>
-
-              <button class="spark-chip" data-prompt="What is the current live weather and temperature across Chennai and Coimbatore?">
-                <span class="spark-icon">
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.5 12 4 4 0 0 0 6 19.9"></path><path d="M8 22v-1M12 22v-2M16 22v-1"></path></svg>
-                </span>
-                <span class="spark-copy">
-                  <strong>Tamil Nadu Live Weather</strong>
-                  <small>Real-time conditions across Chennai and Coimbatore</small>
-                </span>
-                <span class="spark-arrow">→</span>
-              </button>
-
-              <button class="spark-chip" data-prompt="Run Python code to calculate the first 25 Fibonacci numbers and benchmark execution time.">
-                <span class="spark-icon">
-                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 2 12 8 18"></polyline><polyline points="16 6 22 12 16 18"></polyline></svg>
-                </span>
-                <span class="spark-copy">
-                  <strong>Run Python Sandbox</strong>
-                  <small>Compute Fibonacci numbers and benchmark speed</small>
-                </span>
-                <span class="spark-arrow">→</span>
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Composer -->
-      <div class="floating-input-container">
-        <form id="homeInputForm" class="floating-input-pill">
-          <button type="button" class="pill-btn-icon pill-btn-plus" id="homeAttachBtn" title="Attach file or image" aria-label="Attach file">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-
-          <input
-            type="text"
-            id="homeInputText"
-            class="pill-input-field"
-            placeholder="Plan, ask or build something…"
-            autocomplete="off"
-          />
-
-          <button type="button" class="pill-btn-icon pill-btn-mic" id="homeMicBtn" title="Voice input" aria-label="Voice input">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-          </button>
-
-          <button type="submit" class="pill-btn-submit" title="Send message" aria-label="Send message">
-            <span class="btn-send-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-            </span>
-          </button>
-        </form>
-      </div>
-    </section>
-
-    <!-- ============================================================== -->
-    <!-- VIEW 3: CHAT / AGENT THREAD                                    -->
-    <!-- ============================================================== -->
-    <section class="view-screen view-thread" id="viewThread" style="display: none;">
-      <header class="topbar thread-header">
-        <div class="topbar-left">
-          <button id="btnThreadBackToAgents" class="icon-btn" title="Back to workspace" aria-label="Back to workspace">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          </button>
-          <div class="thread-title-wrap">
-            <span class="nav-thread-title" id="displayActiveThreadTitle">web-client · agent</span>
-            <span class="thread-subtitle"><span class="status-dot"></span>Grounded agent · memory on</span>
-          </div>
-        </div>
-        <div class="topbar-actions">
-          <span class="context-chip thread-context-chip">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            Verified sources
-          </span>
-          <button id="btnThreadMore" class="icon-btn" title="Thread options" aria-label="Thread options">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="5" cy="12" r="1.9"></circle>
-              <circle cx="12" cy="12" r="1.9"></circle>
-              <circle cx="19" cy="12" r="1.9"></circle>
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <div class="thread-messages-scroll" id="threadMessagesContainer">
-        <!-- Messages are injected here by app.js -->
-      </div>
-
-      <div class="thread-actions-bar" id="threadActionsBar" style="display: none;">
-        <button id="btnOpenPRView" class="pill-action-btn pill-btn-pr" title="View PR and live demo">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="18" cy="18" r="3"></circle>
-            <circle cx="6" cy="6" r="3"></circle>
-            <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
-            <line x1="6" y1="9" x2="6" y2="21"></line>
-          </svg>
-          <span>View PR</span>
-          <span class="pr-diff-stats" id="actionPillDiffStats">+2,333 −1</span>
+        <button type="submit" class="btn-primary btn-glow">
+          <span>Enter Workspace</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
-
-        <button id="btnMarkReady" class="pill-action-btn pill-btn-ready" title="Mark task as ready">
-          <span id="markReadyLabel">Mark Ready</span>
-        </button>
-      </div>
-
-      <div class="floating-input-container thread-composer">
-        <div id="threadAttachmentPreview" class="thread-attachment-preview" style="display: none;">
-          <div class="attachment-chip">
-            <span id="attachChipIcon">📎</span>
-            <img id="attachChipImg" style="display: none;" alt="Preview" />
-            <span id="attachChipName" class="attach-chip-name">document.pdf</span>
-            <button type="button" id="btnRemoveAttachment" class="btn-chip-remove" aria-label="Remove attachment">&times;</button>
-          </div>
-        </div>
-
-        <form id="threadInputForm" class="floating-input-pill">
-          <input
-            type="file"
-            id="threadFileInput"
-            accept=".pdf,.txt,.md,.json,.csv,.py,.docx,image/*"
-            style="display: none;"
-          />
-
-          <button type="button" class="pill-btn-icon pill-btn-plus" id="threadAttachBtn" title="Add context, image or document" aria-label="Attach file">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-
-          <textarea
-            id="threadChatInput"
-            class="pill-input-field pill-textarea"
-            placeholder="Ask a follow-up…"
-            rows="1"
-            autocomplete="off"
-          ></textarea>
-
-          <button type="button" class="pill-btn-icon pill-btn-mic" id="threadMicBtn" title="Voice dictation" aria-label="Voice dictation">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-          </button>
-
-          <button type="submit" class="pill-btn-submit" id="threadSendBtn" title="Send or stop" aria-label="Send message">
-            <span class="btn-stop-icon" id="sendBtnIcon"></span>
-          </button>
-        </form>
-      </div>
-    </section>
-
-    <!-- ============================================================== -->
-    <!-- VIEW 4: PR & LIVE DEMO                                         -->
-    <!-- ============================================================== -->
-    <section class="view-screen view-pr-demo" id="viewPR" style="display: none;">
-      <header class="topbar pr-header">
-        <div class="topbar-left">
-          <button id="btnPRBackToThread" class="icon-btn" title="Back to thread" aria-label="Back to thread">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          </button>
-          <div class="thread-title-wrap">
-            <span class="nav-thread-title">Pull request</span>
-            <span class="thread-subtitle">Agent-generated changes · ready for review</span>
-          </div>
-        </div>
-        <div class="topbar-actions pr-header-actions">
-          <button id="btnCopyPRLink" class="icon-btn" title="Share PR link" aria-label="Share PR link">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-            </svg>
-          </button>
-          <button id="btnPRMenu" class="icon-btn" title="PR options" aria-label="PR options">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="5" cy="12" r="1.9"></circle>
-              <circle cx="12" cy="12" r="1.9"></circle>
-              <circle cx="19" cy="12" r="1.9"></circle>
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      <div class="pr-scroll-body">
-        <div class="pr-inner">
-
-          <div class="pr-meta-block">
-            <h1 class="pr-main-title" id="prMainTitle">Animated Weather Card demo + architecture plan <span class="pr-number">#1</span></h1>
-            <div class="pr-status-row">
-              <span class="badge-pr-open" id="prStatusBadge">Open</span>
-              <span class="pr-stats-text">
-                <span class="text-green">+2,333</span> <span class="text-red">−1</span>
-                <span class="dot-separator">·</span> 24 Files
-                <span class="dot-separator">·</span> 1 Commit
-              </span>
-            </div>
-          </div>
-
-          <div class="pr-merge-card">
-            <div class="merge-copy">
-              <div class="merge-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg>
-              </div>
-              <div>
-                <div class="merge-card-title">Ready to Merge</div>
-                <div class="merge-card-sub">All checks passed · no conflicts detected</div>
-              </div>
-            </div>
-            <button id="btnSquashAndMerge" class="btn-squash-merge">
-              <span id="squashMergeLabel">Squash &amp; Merge</span>
-            </button>
-          </div>
-
-          <div class="pr-demos-section">
-            <div class="section-head-row">
-              <h3 class="pr-section-heading">Demos</h3>
-              <span class="section-hint">Live component preview</span>
-            </div>
-
-            <div class="demo-card-backdrop" id="demoCardBackdrop">
-              <div class="scenic-backdrop-layer">
-                <div class="bridge-silhouette"></div>
-                <div class="fog-layer"></div>
-              </div>
-
-              <div class="weather-demo-card" id="weatherDemoCard">
-                <div class="sun-orb-glow" id="sunOrbGlow"></div>
-
-                <div class="weather-card-content">
-                  <div class="weather-temp-display" id="demoTempDisplay">72°</div>
-                  <div class="weather-location-name" id="demoLocationName">San Francisco</div>
-                  <div class="weather-condition-label" id="demoConditionLabel">Partly Cloudy</div>
-                </div>
-
-                <div class="cloud-drift-wrap">
-                  <div class="cumulus-cloud cloud-1"></div>
-                  <div class="cumulus-cloud cloud-2"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="demo-interactive-switcher">
-              <button class="demo-switch-pill active" data-condition="cloudy" data-temp="72°" data-city="San Francisco" data-label="Partly Cloudy">⛅ Partly Cloudy</button>
-              <button class="demo-switch-pill" data-condition="sunny" data-temp="86°" data-city="Chennai" data-label="Clear &amp; Sunny">☀️ Sunny</button>
-              <button class="demo-switch-pill" data-condition="rainy" data-temp="58°" data-city="Ooty" data-label="Rain Showers">🌧️ Rainy</button>
-              <button class="demo-switch-pill" data-condition="storm" data-temp="64°" data-city="Coimbatore" data-label="Thunderstorm">⚡ Storm</button>
-            </div>
-          </div>
-
-          <div class="pr-files-section">
-            <div class="section-head-row">
-              <h3 class="pr-section-heading">24 Files</h3>
-              <span class="section-hint">Changed in this pull request</span>
-            </div>
-
-            <div class="files-list-card">
-              <div class="file-diff-row" data-filename="README.md">
-                <div class="file-row-left">
-                  <span class="file-chevron">›</span>
-                  <span class="file-name-bold">README.md</span>
-                </div>
-                <div class="file-row-right"><span class="diff-add">+26</span><span class="diff-del">−1</span></div>
-              </div>
-
-              <div class="file-diff-row" data-filename=".gitignore">
-                <div class="file-row-left">
-                  <span class="file-chevron">›</span>
-                  <span class="file-name-bold">.gitignore</span>
-                  <span class="file-subpath">weather-card-demo</span>
-                </div>
-                <div class="file-row-right"><span class="diff-add">+24</span><span class="diff-del">−0</span></div>
-              </div>
-
-              <div class="file-diff-row" data-filename=".oxlintrc.json">
-                <div class="file-row-left">
-                  <span class="file-chevron">›</span>
-                  <span class="file-name-bold">.oxlintrc.json</span>
-                  <span class="file-subpath">weather-card-demo</span>
-                </div>
-                <div class="file-row-right"><span class="diff-add">+8</span><span class="diff-del">−0</span></div>
-              </div>
-
-              <div class="file-diff-row" data-filename="App.tsx">
-                <div class="file-row-left">
-                  <span class="file-chevron">›</span>
-                  <span class="file-name-bold">App.tsx</span>
-                  <span class="file-subpath">src</span>
-                </div>
-                <div class="file-row-right"><span class="diff-add">+54</span><span class="diff-del">−112</span></div>
-              </div>
-
-              <div class="file-diff-row" data-filename="App.css">
-                <div class="file-row-left">
-                  <span class="file-chevron">›</span>
-                  <span class="file-name-bold">App.css</span>
-                  <span class="file-subpath">src</span>
-                </div>
-                <div class="file-row-right"><span class="diff-add">+93</span><span class="diff-del">−157</span></div>
-              </div>
-
-              <div class="file-diff-row" data-filename="ARCHITECTURE.md">
-                <div class="file-row-left">
-                  <span class="file-chevron">›</span>
-                  <span class="file-name-bold">ARCHITECTURE.md</span>
-                </div>
-                <div class="file-row-right"><span class="diff-add">+96</span><span class="diff-del">−0</span></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-  </div><!-- /app-root -->
-
-  <!-- ============================================================== -->
-  <!-- SETTINGS DRAWER                                                -->
-  <!-- ============================================================== -->
-  <div class="sheet-backdrop" id="sheetBackdrop"></div>
-  <aside class="ios-action-sheet" id="settingsSheet">
-    <div class="sheet-grabber"></div>
-
-    <div class="sheet-header">
-      <div>
-        <span class="panel-kicker">Configuration</span>
-        <h3>Agent &amp; Workspace Settings</h3>
-      </div>
-      <button id="btnCloseSheet" class="btn-sheet-close" aria-label="Close settings">&times;</button>
+      </form>
     </div>
+  </div>
 
-    <div class="sheet-body">
-      <div class="sheet-card">
-        <div class="sheet-card-title">ACTIVE WORKSPACE</div>
-        <div class="sheet-user-row">
-          <div class="sheet-user-avatar" id="sheetAvatar">W</div>
-          <div class="sheet-user-meta">
-            <span class="sheet-user-id" id="sheetThreadName">web-client</span>
-            <span class="sheet-user-tag">Private session memory active</span>
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-layout" id="appLayout">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">⚡</div>
+          <div class="brand-text">
+            <h3>Baasha Agent</h3>
+            <span>ReAct Intelligence</span>
+          </div>
+        </div>
+        <button id="sidebarToggle" class="btn-icon" title="Toggle Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Active User Card -->
+      <div class="active-user-card">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-info">
+          <span class="user-label">LOGGED IN AS</span>
+          <span class="user-name" id="displayThreadName">User</span>
+        </div>
+        <span class="status-indicator" title="Connected"></span>
+      </div>
+
+      <!-- RAG Settings -->
+      <div class="sidebar-section">
+        <div class="section-title">RAG CONFIGURATION</div>
+        <div class="slider-control">
+          <div class="slider-label">
+            <span>Top-K Chunks</span>
+            <span class="slider-value" id="topKVal">4</span>
+          </div>
+          <input type="range" id="topKSlider" min="1" max="8" value="4" step="1">
+        </div>
+        <div class="slider-control">
+          <div class="slider-label">
+            <span>Similarity Threshold</span>
+            <span class="slider-value" id="thresholdVal">0.10</span>
+          </div>
+          <input type="range" id="thresholdSlider" min="0.00" max="0.50" value="0.10" step="0.01">
+        </div>
+      </div>
+
+      <!-- System Telemetry Status -->
+      <div class="sidebar-section">
+        <div class="section-title">ACTIVE SUBSYSTEMS</div>
+        <div class="telemetry-grid">
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>120B Main Agent</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Gmail Drafting Tool</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Tamil Nadu Weather</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Tavily Live News</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Python Sandbox</span>
+          </div>
+          <div class="telemetry-pill">
+            <span class="dot-green"></span>
+            <span>Multimodal Vision & Docs</span>
           </div>
         </div>
       </div>
 
-      <div class="sheet-card">
-        <div class="sheet-card-title">RAG INTELLIGENCE TUNING</div>
-        <div class="sheet-slider-group">
-          <div class="sheet-slider-header">
-            <span>Top-K citations</span>
-            <span class="slider-badge" id="sheetTopKVal">4</span>
-          </div>
-          <input type="range" id="sheetTopKSlider" min="1" max="8" value="4" step="1">
-        </div>
-        <div class="sheet-slider-group" style="margin-top: 18px;">
-          <div class="sheet-slider-header">
-            <span>Similarity threshold</span>
-            <span class="slider-badge" id="sheetThresholdVal">0.10</span>
-          </div>
-          <input type="range" id="sheetThresholdSlider" min="0.00" max="0.50" value="0.10" step="0.01">
-        </div>
-      </div>
-
-      <div class="sheet-card">
-        <div class="sheet-card-title">ACTIVE TOOL SUBSYSTEMS</div>
-        <div class="subsystems-grid">
-          <div class="subsystem-pill"><span class="dot-green"></span> Groq 120B Agent</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Gmail Drafts</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> TN Live Weather</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Tavily News</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Python Sandbox</div>
-          <div class="subsystem-pill"><span class="dot-green"></span> Vision &amp; Docs</div>
-        </div>
-      </div>
-
-      <div class="sheet-actions">
-        <button id="btnClearHistoryBtn" class="btn-sheet-action btn-danger-action">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button id="clearThreadBtn" class="btn-danger-outline" title="Clear current chat memory">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           <span>Clear Chat History</span>
         </button>
-        <button id="btnSwitchAccountBtn" class="btn-sheet-action" style="margin-top: 10px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <span>Switch Account / Logout</span>
+        <button id="logoutBtn" class="btn-action" style="margin-top: 10px; width: 100%; justify-content: center;" title="Log out from this session">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Log Out</span>
         </button>
       </div>
-    </div>
-  </aside>
+    </aside>
 
-  <!-- Toast -->
-  <div class="ios-toast" id="iosToast">Notification message</div>
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- CHAT VIEWPORT -->
+    <main class="chat-viewport">
+      
+      <!-- Top App Bar -->
+      <header class="chat-header">
+        <div class="chat-header-left">
+          <button id="mobileMenuBtn" class="btn-icon mobile-only">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="chat-title-info">
+            <h2>⚡ Baasha Agent Workspace</h2>
+            <div class="header-tags">
+              <span class="tag-pill" id="activeThreadPill">Thread: default</span>
+              <span class="tag-pill tag-purple">Groq 120B Brain</span>
+              <span class="tag-pill tag-green">Gmail Tool Active</span>
+              <span class="tag-pill tag-green">Guardrailed</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-header-right">
+          <div class="stats-badge">
+            <span class="stat-number">5</span>
+            <span class="stat-name">Active Tools</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Messages Stream -->
+      <div class="messages-container" id="messagesContainer">
+        
+        <!-- Welcome Hero Banner (Visible when thread is empty) -->
+        <div class="welcome-hero" id="welcomeHero">
+          <div class="hero-badge">⚡ Baasha Agent • Autonomous Intelligence</div>
+          <h1 class="hero-title">What can Baasha Agent do?</h1>
+          <p class="hero-subtitle">
+            An autonomous ReAct orchestrator equipped with specialized tools, research intelligence, and isolated private memory.
+          </p>
+
+          <!-- Core Agent Capabilities Overview -->
+          <div class="capabilities-showcase">
+            <div class="capability-item">
+              <div class="capability-icon">✉️</div>
+              <div class="capability-text">
+                <strong>Gmail Email Drafting</strong>
+                <span>Drafts structured, professional emails with recipient verification ready for you to review and send (never sends automatically).</span>
+              </div>
+            </div>
+
+            <div class="capability-item">
+              <div class="capability-icon">🌦️</div>
+              <div class="capability-text">
+                <strong>Tamil Nadu Live Weather</strong>
+                <span>Instant meteorological telemetry, temperature, humidity, and forecasts across all 38 districts in Tamil Nadu.</span>
+              </div>
+            </div>
+
+            <div class="capability-item">
+              <div class="capability-icon">📖</div>
+              <div class="capability-text">
+                <strong>SELF-INSTRUCT Research Intelligence</strong>
+                <span>Anti-hallucination fact retrieval from the ACL 2023 paper with exact page numbers, section citations, and Pydantic validation.</span>
+              </div>
+            </div>
+
+            <div class="capability-item">
+              <div class="capability-icon">💻</div>
+              <div class="capability-text">
+                <strong>Python Code Execution Sandbox</strong>
+                <span>Executes Python scripts in an isolated local subprocess with real-time stdout/stderr metrics.</span>
+              </div>
+            </div>
+
+            <div class="capability-item">
+              <div class="capability-icon">🌐</div>
+              <div class="capability-text">
+                <strong>Live Web & Breaking News</strong>
+                <span>Retrieves real-time headlines and web intelligence powered by the Tavily Search API.</span>
+              </div>
+            </div>
+
+            <div class="capability-item">
+              <div class="capability-icon">📎</div>
+              <div class="capability-text">
+                <strong>Document & Image Multimodal Analysis</strong>
+                <span>Upload PDFs, DOCX, text files, or images to summarize content, extract data, parse diagrams, or answer specific questions.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Chat Messages will be appended here -->
+
+      </div>
+
+      <!-- Animated Live Reasoning Status Card (The Checking Phase) -->
+      <div class="reasoning-box-wrapper" id="reasoningBoxWrapper" style="display: none;">
+        <div class="reasoning-card">
+          <div class="reasoning-header">
+            <div class="pulse-loader">
+              <span></span><span></span><span></span>
+            </div>
+            <strong id="reasoningHeaderTitle">⚡ Baasha Agent ReAct Loop & Verification Pipeline</strong>
+            <span class="reasoning-badge">Executing</span>
+          </div>
+          
+          <div class="reasoning-steps">
+            <div class="step-item" id="stepGuardrails">
+              <span class="step-icon">🛡️</span>
+              <span class="step-text">Input Guardrail Inspection (Prompt injection, harmful content, exfiltration checks)</span>
+              <span class="step-status">Checking...</span>
+            </div>
+            <div class="step-item" id="stepAgent">
+              <span class="step-icon">🧠</span>
+              <span class="step-text">Baasha Agent 120B Brain Reasoning & Tool Routing</span>
+              <span class="step-status">Waiting...</span>
+            </div>
+            <div class="step-item" id="stepExecution">
+              <span class="step-icon">⚡</span>
+              <span class="step-text">Executing Tool (Gmail Draft / Weather API / Code Runner / Tavily / RAG)</span>
+              <span class="step-status">Waiting...</span>
+            </div>
+            <div class="step-item" id="stepGrounding">
+              <span class="step-icon">📦</span>
+              <span class="step-text">Schema Verification & Safety Confirmation (Ready for user review)</span>
+              <span class="step-status">Waiting...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Deck -->
+      <footer class="chat-input-deck">
+        <form id="chatForm" class="chat-form">
+          <!-- File Preview Container (Appears when file or image is attached) -->
+          <div id="filePreviewContainer" class="file-preview-container" style="display: none;">
+            <div class="file-preview-card">
+              <div class="file-preview-left">
+                <span id="filePreviewIcon" class="file-preview-icon">📎</span>
+                <img id="imagePreviewThumb" class="file-preview-thumb" style="display: none;" alt="Preview" />
+                <div class="file-preview-meta">
+                  <span id="filePreviewName" class="file-preview-name">document.pdf</span>
+                  <span id="filePreviewSize" class="file-preview-size">12.4 KB</span>
+                </div>
+              </div>
+              <button type="button" id="removeFileBtn" class="btn-remove-attachment" title="Remove attachment">&times;</button>
+            </div>
+          </div>
+
+          <div class="input-wrapper">
+            <!-- Hidden File Input supporting documents and images -->
+            <input 
+              type="file" 
+              id="fileUploadInput" 
+              accept=".pdf,.txt,.md,.json,.csv,.py,.docx,image/*" 
+              style="display: none;" 
+            />
+
+            <!-- Attachment Icon Button on Left of Input Box -->
+            <button type="button" id="attachFileBtn" class="attach-btn" title="Attach document or image (PDF, Word, TXT, PNG, JPG)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+              </svg>
+            </button>
+
+            <textarea 
+              id="chatInput" 
+              placeholder="Draft an email, check weather, run code, or ask questions about an attached doc/image..." 
+              rows="1" 
+              autocomplete="off"
+            ></textarea>
+            
+            <button type="submit" id="sendBtn" class="send-btn" title="Send message (Enter)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </form>
+        <div class="input-footnote">
+          <span>⚡ Baasha Agent</span> • <span>🔒 Memory isolated per thread</span> • <span>📎 Multimodal Vision & Docs</span> • <span>✉️ Gmail Drafts Not Auto-Sent</span>
+        </div>
+      </footer>
+
+    </main>
+  </div>
 
   <script src="js/app.js"></script>
 </body>
 </html>
+
